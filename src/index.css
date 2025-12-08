@@ -2,6 +2,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -31,7 +34,7 @@
     --accent: 248 0.7% 96.8%;
     --accent-foreground: 266 4% 20.8%;
 
-    --destructive: 27 24.5% 57.7%;
+    --destructive: 0 84.2365% 60.1961%;
     --destructive-foreground: 0 0% 100%;
 
     --success: 145 60% 50%;
