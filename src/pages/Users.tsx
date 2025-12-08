@@ -1,0 +1,269 @@
+import { useState } from 'react';
+import { Users as UsersIcon, Plus, Edit, Trash2, Shield, User as UserIcon, Briefcase } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
+import { DataTable } from '@/components/ui/data-table';
+import { Y2KBadge } from '@/components/ui/y2k-badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { users as initialUsers } from '@/data/mockData';
+import type { User, UserRole } from '@/types/database';
+
+const roleIcons: Record<UserRole, React.ReactNode> = {
+  admin: <Shield className="w-4 h-4" />,
+  staff: <UserIcon className="w-4 h-4" />,
+  manager: <Briefcase className="w-4 h-4" />,
+};
+
+const roleBadgeVariant: Record<UserRole, 'pink' | 'teal' | 'lavender'> = {
+  admin: 'pink',
+  staff: 'teal',
+  manager: 'lavender',
+};
+
+export default function UsersPage() {
+  const { toast } = useToast();
+  const [userList, setUserList] = useState(initialUsers);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  
+  const [formData, setFormData] = useState({
+    nama: '',
+    email: '',
+    password: '',
+    role: 'staff' as UserRole,
+  });
+
+  const openAddDialog = () => {
+    setEditingUser(null);
+    setFormData({ nama: '', email: '', password: '', role: 'staff' });
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (user: User) => {
+    setEditingUser(user);
+    setFormData({
+      nama: user.nama,
+      email: user.email,
+      password: '',
+      role: user.role,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!formData.nama || !formData.email) {
+      toast({
+        title: "Error",
+        description: "Mohon lengkapi nama dan email",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editingUser && !formData.password) {
+      toast({
+        title: "Error",
+        description: "Password wajib diisi untuk user baru",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (editingUser) {
+      setUserList(prev => prev.map(u => 
+        u.user_id === editingUser.user_id 
+          ? { 
+              ...u, 
+              nama: formData.nama, 
+              email: formData.email, 
+              role: formData.role,
+              ...(formData.password && { password: formData.password })
+            }
+          : u
+      ));
+      toast({ title: "Berhasil", description: "User berhasil diperbarui" });
+    } else {
+      const newUser: User = {
+        user_id: Math.max(...userList.map(u => u.user_id)) + 1,
+        nama: formData.nama,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        created_at: new Date().toISOString(),
+      };
+      setUserList(prev => [...prev, newUser]);
+      toast({ title: "Berhasil", description: "User baru berhasil ditambahkan" });
+    }
+    setIsDialogOpen(false);
+  };
+
+  const handleDelete = (user: User) => {
+    if (confirm(`Hapus user "${user.nama}"?`)) {
+      setUserList(prev => prev.filter(u => u.user_id !== user.user_id));
+      toast({ title: "Berhasil", description: "User berhasil dihapus" });
+    }
+  };
+
+  const columns = [
+    { 
+      key: 'nama', 
+      header: 'Nama',
+      render: (item: User) => (
+        <span className="font-medium">{item.nama}</span>
+      )
+    },
+    { 
+      key: 'email', 
+      header: 'Email',
+      render: (item: User) => (
+        <span className="text-muted-foreground">{item.email}</span>
+      )
+    },
+    { 
+      key: 'role', 
+      header: 'Role',
+      render: (item: User) => (
+        <div className="flex items-center gap-2">
+          {roleIcons[item.role]}
+          <Y2KBadge variant={roleBadgeVariant[item.role]}>
+            {item.role.charAt(0).toUpperCase() + item.role.slice(1)}
+          </Y2KBadge>
+        </div>
+      )
+    },
+    {
+      key: 'created_at',
+      header: 'Terdaftar',
+      render: (item: User) => (
+        <span className="text-sm text-muted-foreground">
+          {new Date(item.created_at).toLocaleDateString('id-ID')}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Aksi',
+      render: (item: User) => (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0 rounded-lg"
+            onClick={() => openEditDialog(item)}
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0 rounded-lg border-destructive/50 text-destructive hover:bg-destructive/10"
+            onClick={() => handleDelete(item)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader 
+        title="Kelola Akun" 
+        description="Manajemen user dan hak akses"
+        icon={UsersIcon}
+      >
+        <Button 
+          onClick={openAddDialog}
+          className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Tambah User
+        </Button>
+      </PageHeader>
+
+      <DataTable data={userList} columns={columns} />
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-space">
+              {editingUser ? 'Edit User' : 'Tambah User Baru'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nama Lengkap</Label>
+              <Input
+                value={formData.nama}
+                onChange={(e) => setFormData(prev => ({ ...prev, nama: e.target.value }))}
+                className="rounded-xl border-2"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                className="rounded-xl border-2"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{editingUser ? 'Password Baru (kosongkan jika tidak diubah)' : 'Password'}</Label>
+              <Input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                className="rounded-xl border-2"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select 
+                value={formData.role} 
+                onValueChange={(v) => setFormData(prev => ({ ...prev, role: v as UserRole }))}
+              >
+                <SelectTrigger className="rounded-xl border-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
+              Batal
+            </Button>
+            <Button 
+              onClick={handleSave}
+              className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90 rounded-xl"
+            >
+              Simpan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
