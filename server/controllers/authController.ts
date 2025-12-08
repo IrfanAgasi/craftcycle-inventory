@@ -1,0 +1,40 @@
+import { Request, Response } from 'express';
+import { db } from '../config/db';
+import crypto from 'crypto';
+import { User } from '../types';
+
+export const login = async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    try {
+        const [users] = await db.query<any[]>('SELECT * FROM users WHERE email = ?', [email]);
+
+        if (users.length === 0) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        const user = users[0];
+
+        // Hash password with MD5 to match database
+        const hashedPassword = crypto.createHash('md5').update(password).digest('hex');
+
+        if (hashedPassword !== user.password) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Return user without password
+        const { password: _, ...userWithoutPassword } = user;
+
+        res.json({
+            message: 'Login successful',
+            user: userWithoutPassword
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};

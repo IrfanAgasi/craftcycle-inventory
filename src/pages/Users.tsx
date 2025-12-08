@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { users as initialUsers } from '@/data/mockData';
+import { useUsers } from '@/hooks/useInventory';
 import type { User, UserRole } from '@/types/database';
 
 const roleIcons: Record<UserRole, React.ReactNode> = {
@@ -38,10 +38,10 @@ const roleBadgeVariant: Record<UserRole, 'pink' | 'teal' | 'lavender'> = {
 
 export default function UsersPage() {
   const { toast } = useToast();
-  const [userList, setUserList] = useState(initialUsers);
+  const { users, createUser, updateUser, deleteUser, isLoading } = useUsers();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  
+
   const [formData, setFormData] = useState({
     nama: '',
     email: '',
@@ -66,7 +66,7 @@ export default function UsersPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.nama || !formData.email) {
       toast({
         title: "Error",
@@ -85,58 +85,69 @@ export default function UsersPage() {
       return;
     }
 
-    if (editingUser) {
-      setUserList(prev => prev.map(u => 
-        u.user_id === editingUser.user_id 
-          ? { 
-              ...u, 
-              nama: formData.nama, 
-              email: formData.email, 
-              role: formData.role,
-              ...(formData.password && { password: formData.password })
-            }
-          : u
-      ));
-      toast({ title: "Berhasil", description: "User berhasil diperbarui" });
-    } else {
-      const newUser: User = {
-        user_id: Math.max(...userList.map(u => u.user_id)) + 1,
-        nama: formData.nama,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-        created_at: new Date().toISOString(),
-      };
-      setUserList(prev => [...prev, newUser]);
-      toast({ title: "Berhasil", description: "User baru berhasil ditambahkan" });
+    try {
+      if (editingUser) {
+        await updateUser({
+          id: editingUser.user_id,
+          user: {
+            nama: formData.nama,
+            email: formData.email,
+            role: formData.role,
+            ...(formData.password ? { password: formData.password } : {})
+          }
+        });
+        toast({ title: "Berhasil", description: "User berhasil diperbarui" });
+      } else {
+        await createUser({
+          nama: formData.nama,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+        });
+        toast({ title: "Berhasil", description: "User baru berhasil ditambahkan" });
+      }
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Gagal",
+        description: error.message || "Terjadi kesalahan",
+        variant: "destructive"
+      });
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = (user: User) => {
+  const handleDelete = async (user: User) => {
     if (confirm(`Hapus user "${user.nama}"?`)) {
-      setUserList(prev => prev.filter(u => u.user_id !== user.user_id));
-      toast({ title: "Berhasil", description: "User berhasil dihapus" });
+      try {
+        await deleteUser(user.user_id);
+        toast({ title: "Berhasil", description: "User berhasil dihapus" });
+      } catch (error: any) {
+        toast({
+          title: "Gagal",
+          description: error.message || "Gagal menghapus user",
+          variant: "destructive"
+        });
+      }
     }
   };
 
   const columns = [
-    { 
-      key: 'nama', 
+    {
+      key: 'nama',
       header: 'Nama',
       render: (item: User) => (
         <span className="font-medium">{item.nama}</span>
       )
     },
-    { 
-      key: 'email', 
+    {
+      key: 'email',
       header: 'Email',
       render: (item: User) => (
         <span className="text-muted-foreground">{item.email}</span>
       )
     },
-    { 
-      key: 'role', 
+    {
+      key: 'role',
       header: 'Role',
       render: (item: User) => (
         <div className="flex items-center gap-2">
@@ -184,12 +195,12 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Kelola Akun" 
+      <PageHeader
+        title="Kelola Akun"
         description="Manajemen user dan hak akses"
         icon={UsersIcon}
       >
-        <Button 
+        <Button
           onClick={openAddDialog}
           className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90"
         >
@@ -198,7 +209,11 @@ export default function UsersPage() {
         </Button>
       </PageHeader>
 
-      <DataTable data={userList} columns={columns} />
+      {isLoading ? (
+        <div>Loading Users...</div>
+      ) : (
+        <DataTable data={users} columns={columns} />
+      )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-2xl">
@@ -236,8 +251,8 @@ export default function UsersPage() {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select 
-                value={formData.role} 
+              <Select
+                value={formData.role}
                 onValueChange={(v) => setFormData(prev => ({ ...prev, role: v as UserRole }))}
               >
                 <SelectTrigger className="rounded-xl border-2">
@@ -255,7 +270,7 @@ export default function UsersPage() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
               Batal
             </Button>
-            <Button 
+            <Button
               onClick={handleSave}
               className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90 rounded-xl"
             >

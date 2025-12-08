@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PackageMinus, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,13 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { bahanSisa, getKategoriById } from '@/data/mockData';
+import { useInventory } from '@/hooks/useInventory';
 
 export default function StokKeluarPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { inventory: bahanList, stokKeluar } = useInventory();
   const [searchParams] = useSearchParams();
   const preselectedBahan = searchParams.get('bahan');
 
@@ -30,15 +32,24 @@ export default function StokKeluarPage() {
     keterangan: '',
   });
 
-  const selectedBahan = bahanSisa.find(b => b.bahan_id.toString() === formData.bahan_id);
+  const selectedBahan = bahanList.find(b => b.bahan_id.toString() === formData.bahan_id);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.bahan_id || !formData.jumlah || !formData.alasan) {
       toast({
         title: "Error",
         description: "Mohon lengkapi semua field wajib",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Anda harus login",
         variant: "destructive",
       });
       return;
@@ -54,20 +65,35 @@ export default function StokKeluarPage() {
       return;
     }
 
-    const isRusak = formData.alasan === 'rusak';
-    
-    toast({
-      title: isRusak ? "Bahan Rusak Dicatat! ⚠️" : "Stok Keluar Berhasil! ✨",
-      description: `${formData.jumlah} unit ${selectedBahan?.nama_bahan} telah dikurangi`,
-    });
+    try {
+      await stokKeluar({
+        bahan_id: parseInt(formData.bahan_id),
+        jumlah: jumlah,
+        user_id: user.user_id,
+        keterangan: `${formData.alasan}: ${formData.keterangan}`
+      });
 
-    setFormData({ bahan_id: '', jumlah: '', alasan: '', keterangan: '' });
+      const isRusak = formData.alasan === 'rusak';
+
+      toast({
+        title: isRusak ? "Bahan Rusak Dicatat! ⚠️" : "Stok Keluar Berhasil! ✨",
+        description: `${formData.jumlah} unit ${selectedBahan?.nama_bahan} telah dikurangi`,
+      });
+
+      setFormData({ bahan_id: '', jumlah: '', alasan: '', keterangan: '' });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Gagal mencatat stok keluar",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Input Stok Keluar" 
+      <PageHeader
+        title="Input Stok Keluar"
         description="Catat pengeluaran stok bahan dari gudang"
         icon={PackageMinus}
       />
@@ -76,15 +102,15 @@ export default function StokKeluarPage() {
         <form onSubmit={handleSubmit} className="y2k-card p-6 space-y-6">
           <div className="space-y-2">
             <Label>Pilih Bahan</Label>
-            <Select 
-              value={formData.bahan_id} 
+            <Select
+              value={formData.bahan_id}
               onValueChange={(v) => setFormData(prev => ({ ...prev, bahan_id: v }))}
             >
               <SelectTrigger className="rounded-xl border-2 h-12">
                 <SelectValue placeholder="Pilih bahan..." />
               </SelectTrigger>
               <SelectContent>
-                {bahanSisa.map(b => (
+                {bahanList.map(b => (
                   <SelectItem key={b.bahan_id} value={b.bahan_id.toString()}>
                     <div className="flex items-center gap-2">
                       <span>{b.nama_bahan}</span>
@@ -118,8 +144,8 @@ export default function StokKeluarPage() {
 
           <div className="space-y-2">
             <Label>Alasan Pengeluaran</Label>
-            <Select 
-              value={formData.alasan} 
+            <Select
+              value={formData.alasan}
               onValueChange={(v) => setFormData(prev => ({ ...prev, alasan: v }))}
             >
               <SelectTrigger className="rounded-xl border-2 h-12">
@@ -155,12 +181,12 @@ export default function StokKeluarPage() {
 
           <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
             <p className="text-sm text-muted-foreground">
-              <strong>User:</strong> {user?.nama} <br />
+              <strong>User:</strong> {user?.nama || 'Guest'} <br />
               <strong>Tanggal:</strong> {new Date().toLocaleString('id-ID')}
             </p>
           </div>
 
-          <Button 
+          <Button
             type="submit"
             className="w-full h-12 rounded-xl text-lg bg-gradient-to-r from-y2k-pink to-y2k-orange text-primary-foreground hover:opacity-90"
           >

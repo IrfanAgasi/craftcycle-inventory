@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { User, UserRole } from '@/types/database';
-import { users } from '@/data/mockData';
+// import { users } from '@/data/mockData'; // No longer needed
+import { loginUser } from '@/services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -19,13 +20,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const foundUser = users.find(u => u.email === email && u.password === password);
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('craftcycle_user', JSON.stringify(foundUser));
+    try {
+      const { user: loggedInUser } = await loginUser(email, password);
+      setUser(loggedInUser);
+      localStorage.setItem('craftcycle_user', JSON.stringify(loggedInUser));
       return true;
+    } catch (error) {
+      console.error("Login failed", error);
+      return false;
     }
-    return false;
   }, []);
 
   const logout = useCallback(() => {

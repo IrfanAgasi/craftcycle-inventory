@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PackagePlus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,13 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { bahanSisa, getKategoriById } from '@/data/mockData';
+import { useInventory } from '@/hooks/useInventory';
 
 export default function StokMasukPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { inventory: bahanList, kategori: kategoriList, stokMasuk } = useInventory();
   const [searchParams] = useSearchParams();
   const preselectedBahan = searchParams.get('bahan');
 
@@ -29,9 +31,14 @@ export default function StokMasukPage() {
     keterangan: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const getKategoriName = (id: number) => {
+    const kat = kategoriList.find(k => k.kategori_id === id);
+    return kat ? kat.nama_kategori : 'Unknown';
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.bahan_id || !formData.jumlah) {
       toast({
         title: "Error",
@@ -41,20 +48,45 @@ export default function StokMasukPage() {
       return;
     }
 
-    const bahan = bahanSisa.find(b => b.bahan_id.toString() === formData.bahan_id);
-    
-    toast({
-      title: "Stok Masuk Berhasil! ✨",
-      description: `${formData.jumlah} unit ${bahan?.nama_bahan} telah ditambahkan`,
-    });
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Anda harus login",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setFormData({ bahan_id: '', jumlah: '', keterangan: '' });
+    try {
+      const bahan = bahanList.find(b => b.bahan_id.toString() === formData.bahan_id);
+
+      await stokMasuk({
+        bahan_id: parseInt(formData.bahan_id),
+        jumlah: parseFloat(formData.jumlah),
+        user_id: user.user_id,
+        keterangan: formData.keterangan
+      });
+
+      toast({
+        title: "Stok Masuk Berhasil! ✨",
+        description: `${formData.jumlah} unit ${bahan?.nama_bahan} telah ditambahkan`,
+      });
+
+      setFormData({ bahan_id: '', jumlah: '', keterangan: '' });
+      // Optional: navigate back or stay
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal mencatat stok masuk",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Input Stok Masuk" 
+      <PageHeader
+        title="Input Stok Masuk"
         description="Tambahkan stok bahan yang masuk ke gudang"
         icon={PackagePlus}
       />
@@ -63,20 +95,20 @@ export default function StokMasukPage() {
         <form onSubmit={handleSubmit} className="y2k-card p-6 space-y-6">
           <div className="space-y-2">
             <Label>Pilih Bahan</Label>
-            <Select 
-              value={formData.bahan_id} 
+            <Select
+              value={formData.bahan_id}
               onValueChange={(v) => setFormData(prev => ({ ...prev, bahan_id: v }))}
             >
               <SelectTrigger className="rounded-xl border-2 h-12">
                 <SelectValue placeholder="Pilih bahan..." />
               </SelectTrigger>
               <SelectContent>
-                {bahanSisa.map(b => (
+                {bahanList.map(b => (
                   <SelectItem key={b.bahan_id} value={b.bahan_id.toString()}>
                     <div className="flex items-center gap-2">
                       <span>{b.nama_bahan}</span>
                       <span className="text-muted-foreground">
-                        ({b.warna}) - {getKategoriById(b.kategori_id)?.nama_kategori}
+                        ({b.warna}) - {getKategoriName(b.kategori_id)}
                       </span>
                     </div>
                   </SelectItem>
@@ -110,12 +142,12 @@ export default function StokMasukPage() {
 
           <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
             <p className="text-sm text-muted-foreground">
-              <strong>User:</strong> {user?.nama} <br />
+              <strong>User:</strong> {user?.nama || 'Guest'} <br />
               <strong>Tanggal:</strong> {new Date().toLocaleString('id-ID')}
             </p>
           </div>
 
-          <Button 
+          <Button
             type="submit"
             className="w-full h-12 rounded-xl text-lg bg-gradient-to-r from-y2k-teal to-y2k-mint text-foreground hover:opacity-90"
           >

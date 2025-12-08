@@ -1,9 +1,9 @@
-import { 
-  LayoutDashboard, 
-  Package, 
-  FolderOpen, 
-  PackagePlus, 
-  PackageMinus, 
+import {
+  LayoutDashboard,
+  Package,
+  FolderOpen,
+  PackagePlus,
+  PackageMinus,
   AlertTriangle,
   Sparkles,
   Factory,
@@ -16,76 +16,55 @@ import { Y2KBadge } from '@/components/ui/y2k-badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { 
-  bahanSisa, 
-  kategoriBahan, 
-  riwayatStok, 
-  produkJadi,
-  bahanRusak,
-  getKategoriById 
-} from '@/data/mockData';
+import { useDashboard, useInventory } from '@/hooks/useInventory';
 import type { BahanSisa } from '@/types/database';
 
 export default function Dashboard() {
   const { hasRole } = useAuth();
   const navigate = useNavigate();
+  const { data: stats } = useDashboard();
+  const { inventory: bahanList, kategori: kategoriList } = useInventory();
 
-  // Calculate stats
-  const totalBahan = bahanSisa.length;
-  const totalKategori = kategoriBahan.length;
-  const totalProduk = produkJadi.length;
-  
-  const thisMonth = new Date().getMonth();
-  const stokMasukBulanIni = riwayatStok.filter(r => 
-    r.tipe === 'masuk' && new Date(r.tanggal).getMonth() === thisMonth
-  ).reduce((sum, r) => sum + r.jumlah, 0);
-  
-  const stokKeluarBulanIni = riwayatStok.filter(r => 
-    r.tipe === 'keluar' && new Date(r.tanggal).getMonth() === thisMonth
-  ).reduce((sum, r) => sum + r.jumlah, 0);
-  
-  const produksiBulanIni = riwayatStok.filter(r => 
-    r.tipe === 'produksi' && new Date(r.tanggal).getMonth() === thisMonth
-  ).length;
-  
-  const rusakBulanIni = bahanRusak.filter(r => 
-    new Date(r.tanggal_rusak).getMonth() === thisMonth
-  ).reduce((sum, r) => sum + r.jumlah, 0);
+  // Low stock alert from stats or calculate from inventory list? 
+  // Stats endpoint returns specific structure.
 
-  // Low stock alert
-  const lowStockBahan = bahanSisa.filter(b => b.stok_total < 10);
+  const getKategoriName = (id: number) => {
+    return kategoriList.find(k => k.kategori_id === id)?.nama_kategori;
+  };
+
+  if (!stats) return <div className="p-8 text-center">Loading Dashboard...</div>;
 
   // Table columns
   const columns = [
-    { 
-      key: 'nama_bahan', 
+    {
+      key: 'nama_bahan',
       header: 'Nama Bahan',
       render: (item: BahanSisa) => (
         <span className="font-medium">{item.nama_bahan}</span>
       )
     },
-    { 
-      key: 'kategori', 
+    {
+      key: 'kategori',
       header: 'Kategori',
       render: (item: BahanSisa) => (
         <Y2KBadge variant="lavender">
-          {getKategoriById(item.kategori_id)?.nama_kategori}
+          {getKategoriName(item.kategori_id)}
         </Y2KBadge>
       )
     },
     { key: 'berat_ukuran', header: 'Ukuran' },
     { key: 'warna', header: 'Warna' },
-    { 
-      key: 'kondisi', 
+    {
+      key: 'kondisi',
       header: 'Kondisi',
       render: (item: BahanSisa) => {
-        const variant = item.kondisi === 'siap-olah' ? 'success' : 
-                       item.kondisi === 'mentah' ? 'warning' : 'danger';
+        const variant = item.kondisi === 'siap-olah' ? 'success' :
+          item.kondisi === 'mentah' ? 'warning' : 'danger';
         return <Y2KBadge variant={variant}>{item.kondisi}</Y2KBadge>;
       }
     },
-    { 
-      key: 'stok_total', 
+    {
+      key: 'stok_total',
       header: 'Stok',
       render: (item: BahanSisa) => (
         <span className={item.stok_total < 10 ? 'text-destructive font-bold' : 'font-medium'}>
@@ -121,8 +100,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <PageHeader 
-        title="Dashboard" 
+      <PageHeader
+        title="Dashboard"
         description="Selamat datang di Craft Cycle Inventory System"
         icon={LayoutDashboard}
       />
@@ -131,25 +110,25 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Bahan"
-          value={totalBahan}
+          value={stats.totalBahan}
           icon={Package}
           variant="pink"
         />
         <StatCard
           title="Total Kategori"
-          value={totalKategori}
+          value={stats.totalKategori}
           icon={FolderOpen}
           variant="lavender"
         />
         <StatCard
           title="Stok Masuk Bulan Ini"
-          value={stokMasukBulanIni}
+          value={stats.stokMasukBulanIni}
           icon={PackagePlus}
           variant="teal"
         />
         <StatCard
           title="Stok Keluar Bulan Ini"
-          value={stokKeluarBulanIni}
+          value={stats.stokKeluarBulanIni}
           icon={PackageMinus}
           variant="mint"
         />
@@ -158,39 +137,39 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Produk Jadi"
-          value={totalProduk}
+          value={stats.totalProduk}
           icon={Sparkles}
           variant="pink"
         />
         <StatCard
           title="Produksi Bulan Ini"
-          value={produksiBulanIni}
+          value={stats.produksiBulanIni}
           icon={Factory}
           variant="teal"
         />
         <StatCard
           title="Bahan Rusak Bulan Ini"
-          value={rusakBulanIni}
+          value={stats.rusakBulanIni}
           icon={AlertTriangle}
           variant="warning"
         />
         <StatCard
           title="Bahan Stok Rendah"
-          value={lowStockBahan.length}
+          value={stats.lowStockBahan.length}
           icon={TrendingUp}
-          variant={lowStockBahan.length > 0 ? 'danger' : 'mint'}
+          variant={stats.lowStockBahan.length > 0 ? 'danger' : 'mint'}
         />
       </div>
 
       {/* Low Stock Alert */}
-      {lowStockBahan.length > 0 && (
+      {stats.lowStockBahan.length > 0 && (
         <div className="p-4 rounded-2xl bg-destructive/10 border-2 border-destructive/30">
           <div className="flex items-center gap-3 mb-3">
             <AlertTriangle className="w-5 h-5 text-destructive" />
             <h3 className="font-semibold text-destructive">Peringatan Stok Rendah!</h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            {lowStockBahan.map(b => (
+            {stats.lowStockBahan.map(b => (
               <Y2KBadge key={b.bahan_id} variant="danger" size="md">
                 {b.nama_bahan} ({b.warna}) - Stok: {b.stok_total}
               </Y2KBadge>
@@ -202,9 +181,9 @@ export default function Dashboard() {
       {/* Bahan Sisa Table */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold font-space">Daftar Bahan Sisa</h2>
+          <h2 className="text-xl font-bold font-space">Daftar Bahan Sisa (Baru)</h2>
           {hasRole(['admin', 'staff']) && (
-            <Button 
+            <Button
               onClick={() => navigate('/bahan')}
               className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90"
             >
@@ -213,8 +192,9 @@ export default function Dashboard() {
             </Button>
           )}
         </div>
-        <DataTable 
-          data={bahanSisa.slice(0, 10)} 
+        {/* Slicing 10 newest items if we assume they are sorted by ID or updated_at. Simple slice is fine. */}
+        <DataTable
+          data={bahanList.slice(0, 10)}
           columns={columns}
         />
       </div>

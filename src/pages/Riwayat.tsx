@@ -11,8 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { riwayatStok, getBahanById, getUserById } from '@/data/mockData';
-import type { RiwayatStok, TipeRiwayat } from '@/types/database';
+import { useHistory } from '@/hooks/useInventory';
+import type { TipeRiwayat } from '@/types/database';
+import type { RiwayatStokExtended } from '@/services/api';
 
 const tipeIcons: Record<TipeRiwayat, React.ReactNode> = {
   masuk: <ArrowUpCircle className="w-4 h-4 text-success" />,
@@ -29,13 +30,13 @@ const tipeBadgeVariant: Record<TipeRiwayat, 'success' | 'warning' | 'danger' | '
 };
 
 export default function RiwayatPage() {
+  const { data: riwayatStok = [] } = useHistory();
   const [search, setSearch] = useState('');
   const [filterTipe, setFilterTipe] = useState('all');
 
   const filteredRiwayat = riwayatStok.filter(r => {
-    const bahan = getBahanById(r.bahan_id);
-    const matchSearch = bahan?.nama_bahan.toLowerCase().includes(search.toLowerCase()) ||
-                       r.keterangan.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = r.nama_bahan.toLowerCase().includes(search.toLowerCase()) ||
+      r.keterangan.toLowerCase().includes(search.toLowerCase());
     const matchTipe = filterTipe === 'all' || r.tipe === filterTipe;
     return matchSearch && matchTipe;
   }).sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
@@ -44,7 +45,7 @@ export default function RiwayatPage() {
     {
       key: 'tanggal',
       header: 'Tanggal',
-      render: (item: RiwayatStok) => (
+      render: (item: RiwayatStokExtended) => (
         <span className="text-sm">
           {new Date(item.tanggal).toLocaleDateString('id-ID', {
             day: '2-digit',
@@ -59,7 +60,7 @@ export default function RiwayatPage() {
     {
       key: 'tipe',
       header: 'Tipe',
-      render: (item: RiwayatStok) => (
+      render: (item: RiwayatStokExtended) => (
         <div className="flex items-center gap-2">
           {tipeIcons[item.tipe]}
           <Y2KBadge variant={tipeBadgeVariant[item.tipe]}>
@@ -71,12 +72,11 @@ export default function RiwayatPage() {
     {
       key: 'bahan',
       header: 'Bahan',
-      render: (item: RiwayatStok) => {
-        const bahan = getBahanById(item.bahan_id);
+      render: (item: RiwayatStokExtended) => {
         return (
           <div>
-            <p className="font-medium">{bahan?.nama_bahan}</p>
-            <p className="text-xs text-muted-foreground">{bahan?.warna}</p>
+            <p className="font-medium">{item.nama_bahan}</p>
+            <p className="text-xs text-muted-foreground">{item.warna}</p>
           </div>
         );
       }
@@ -84,11 +84,10 @@ export default function RiwayatPage() {
     {
       key: 'jumlah',
       header: 'Jumlah',
-      render: (item: RiwayatStok) => (
-        <span className={`font-bold ${
-          item.tipe === 'masuk' ? 'text-success' : 
-          item.tipe === 'rusak' ? 'text-destructive' : 'text-y2k-orange'
-        }`}>
+      render: (item: RiwayatStokExtended) => (
+        <span className={`font-bold ${item.tipe === 'masuk' ? 'text-success' :
+            item.tipe === 'rusak' ? 'text-destructive' : 'text-y2k-orange'
+          }`}>
           {item.tipe === 'masuk' ? '+' : '-'}{item.jumlah}
         </span>
       )
@@ -96,17 +95,16 @@ export default function RiwayatPage() {
     {
       key: 'user',
       header: 'User',
-      render: (item: RiwayatStok) => {
-        const user = getUserById(item.user_id);
+      render: (item: RiwayatStokExtended) => {
         return (
-          <span className="text-sm">{user?.nama}</span>
+          <span className="text-sm">{item.user_name || 'Unknown'}</span>
         );
       }
     },
     {
       key: 'keterangan',
       header: 'Keterangan',
-      render: (item: RiwayatStok) => (
+      render: (item: RiwayatStokExtended) => (
         <span className="text-sm text-muted-foreground">{item.keterangan || '-'}</span>
       )
     },
@@ -114,8 +112,8 @@ export default function RiwayatPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Riwayat Stok" 
+      <PageHeader
+        title="Riwayat Stok"
         description="Log semua aktivitas inventaris"
         icon={History}
       />

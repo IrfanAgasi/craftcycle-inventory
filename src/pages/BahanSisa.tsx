@@ -23,25 +23,21 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  bahanSisa as initialBahan, 
-  kategoriBahan,
-  getKategoriById 
-} from '@/data/mockData';
+import { useInventory } from '@/hooks/useInventory';
 import type { BahanSisa, KondisiBahan } from '@/types/database';
 
 export default function BahanSisaPage() {
   const { hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const [bahanList, setBahanList] = useState(initialBahan);
+  const { inventory: bahanList, kategori: kategoriList, isLoading, createBahan, updateBahan, deleteBahan } = useInventory();
+
   const [search, setSearch] = useState('');
   const [filterKategori, setFilterKategori] = useState('all');
   const [filterKondisi, setFilterKondisi] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBahan, setEditingBahan] = useState<BahanSisa | null>(null);
-  
+
   const [formData, setFormData] = useState({
     nama_bahan: '',
     kategori_id: '',
@@ -54,7 +50,7 @@ export default function BahanSisaPage() {
   // Filter data
   const filteredBahan = bahanList.filter(b => {
     const matchSearch = b.nama_bahan.toLowerCase().includes(search.toLowerCase()) ||
-                       b.warna.toLowerCase().includes(search.toLowerCase());
+      b.warna.toLowerCase().includes(search.toLowerCase());
     const matchKategori = filterKategori === 'all' || b.kategori_id.toString() === filterKategori;
     const matchKondisi = filterKondisi === 'all' || b.kondisi === filterKondisi;
     return matchSearch && matchKategori && matchKondisi;
@@ -86,7 +82,7 @@ export default function BahanSisaPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.nama_bahan || !formData.kategori_id) {
       toast({
         title: "Error",
@@ -96,68 +92,76 @@ export default function BahanSisaPage() {
       return;
     }
 
-    if (editingBahan) {
-      setBahanList(prev => prev.map(b => 
-        b.bahan_id === editingBahan.bahan_id 
-          ? { ...b, ...formData, kategori_id: parseInt(formData.kategori_id), updated_at: new Date().toISOString() }
-          : b
-      ));
-      toast({ title: "Berhasil", description: "Bahan berhasil diperbarui" });
-    } else {
-      const newBahan: BahanSisa = {
-        bahan_id: Math.max(...bahanList.map(b => b.bahan_id)) + 1,
-        nama_bahan: formData.nama_bahan,
-        kategori_id: parseInt(formData.kategori_id),
-        berat_ukuran: formData.berat_ukuran,
-        warna: formData.warna,
-        kondisi: formData.kondisi,
-        stok_total: formData.stok_total,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setBahanList(prev => [...prev, newBahan]);
-      toast({ title: "Berhasil", description: "Bahan baru berhasil ditambahkan" });
+    try {
+      if (editingBahan) {
+        await updateBahan({
+          id: editingBahan.bahan_id,
+          data: { ...formData, kategori_id: parseInt(formData.kategori_id) }
+        });
+        toast({ title: "Berhasil", description: "Bahan berhasil diperbarui" });
+      } else {
+        await createBahan({
+          ...formData,
+          kategori_id: parseInt(formData.kategori_id),
+        });
+        toast({ title: "Berhasil", description: "Bahan baru berhasil ditambahkan" });
+      }
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan data",
+        variant: "destructive",
+      });
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = (bahan: BahanSisa) => {
+  const handleDelete = async (bahan: BahanSisa) => {
     if (confirm(`Hapus bahan "${bahan.nama_bahan}"?`)) {
-      setBahanList(prev => prev.filter(b => b.bahan_id !== bahan.bahan_id));
-      toast({ title: "Berhasil", description: "Bahan berhasil dihapus" });
+      try {
+        await deleteBahan(bahan.bahan_id);
+        toast({ title: "Berhasil", description: "Bahan berhasil dihapus" });
+      } catch (error) {
+        toast({ title: "Error", description: "Gagal menghapus bahan", variant: "destructive" });
+      }
     }
+  };
+
+  const getKategoriName = (id: number) => {
+    const kat = kategoriList.find(k => k.kategori_id === id);
+    return kat ? kat.nama_kategori : 'Unknown';
   };
 
   const columns = [
-    { 
-      key: 'nama_bahan', 
+    {
+      key: 'nama_bahan',
       header: 'Nama Bahan',
       render: (item: BahanSisa) => (
         <span className="font-medium">{item.nama_bahan}</span>
       )
     },
-    { 
-      key: 'kategori', 
+    {
+      key: 'kategori',
       header: 'Kategori',
       render: (item: BahanSisa) => (
         <Y2KBadge variant="lavender">
-          {getKategoriById(item.kategori_id)?.nama_kategori}
+          {getKategoriName(item.kategori_id)}
         </Y2KBadge>
       )
     },
     { key: 'berat_ukuran', header: 'Ukuran' },
     { key: 'warna', header: 'Warna' },
-    { 
-      key: 'kondisi', 
+    {
+      key: 'kondisi',
       header: 'Kondisi',
       render: (item: BahanSisa) => {
-        const variant = item.kondisi === 'siap-olah' ? 'success' : 
-                       item.kondisi === 'mentah' ? 'warning' : 'danger';
+        const variant = item.kondisi === 'siap-olah' ? 'success' :
+          item.kondisi === 'mentah' ? 'warning' : 'danger';
         return <Y2KBadge variant={variant}>{item.kondisi}</Y2KBadge>;
       }
     },
-    { 
-      key: 'stok_total', 
+    {
+      key: 'stok_total',
       header: 'Stok',
       render: (item: BahanSisa) => (
         <span className={item.stok_total < 10 ? 'text-destructive font-bold' : 'font-medium'}>
@@ -217,13 +221,13 @@ export default function BahanSisaPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Bahan Sisa" 
+      <PageHeader
+        title="Bahan Sisa"
         description="Kelola inventaris bahan sisa"
         icon={Package}
       >
         {hasRole(['admin', 'staff']) && (
-          <Button 
+          <Button
             onClick={openAddDialog}
             className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90"
           >
@@ -251,7 +255,7 @@ export default function BahanSisaPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Semua Kategori</SelectItem>
-            {kategoriBahan.map(k => (
+            {kategoriList.map(k => (
               <SelectItem key={k.kategori_id} value={k.kategori_id.toString()}>
                 {k.nama_kategori}
               </SelectItem>
@@ -292,15 +296,15 @@ export default function BahanSisaPage() {
             </div>
             <div className="space-y-2">
               <Label>Kategori</Label>
-              <Select 
-                value={formData.kategori_id} 
+              <Select
+                value={formData.kategori_id}
                 onValueChange={(v) => setFormData(prev => ({ ...prev, kategori_id: v }))}
               >
                 <SelectTrigger className="rounded-xl border-2">
                   <SelectValue placeholder="Pilih kategori" />
                 </SelectTrigger>
                 <SelectContent>
-                  {kategoriBahan.map(k => (
+                  {kategoriList.map(k => (
                     <SelectItem key={k.kategori_id} value={k.kategori_id.toString()}>
                       {k.nama_kategori}
                     </SelectItem>
@@ -329,8 +333,8 @@ export default function BahanSisaPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Kondisi</Label>
-                <Select 
-                  value={formData.kondisi} 
+                <Select
+                  value={formData.kondisi}
                   onValueChange={(v) => setFormData(prev => ({ ...prev, kondisi: v as KondisiBahan }))}
                 >
                   <SelectTrigger className="rounded-xl border-2">
@@ -358,7 +362,7 @@ export default function BahanSisaPage() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
               Batal
             </Button>
-            <Button 
+            <Button
               onClick={handleSave}
               className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90 rounded-xl"
             >
