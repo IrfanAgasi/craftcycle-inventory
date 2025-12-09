@@ -12,9 +12,12 @@ import {
     fetchUsers,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    createKategori,
+    updateKategori,
+    deleteKategori
 } from '../services/api';
-import { BahanSisa, User } from '../types/database';
+import { BahanSisa, User, KategoriBahan } from '../types/database';
 
 export const useHistory = () => {
     return useQuery({
@@ -127,5 +130,45 @@ export const useInventory = () => {
         deleteBahan: deleteMutation.mutateAsync,
         stokMasuk: stokMasukMutation.mutateAsync,
         stokKeluar: stokKeluarMutation.mutateAsync,
+    };
+};
+
+export const useKategori = () => {
+    const queryClient = useQueryClient();
+
+    const kategoriQuery = useQuery({
+        queryKey: ['kategori'],
+        queryFn: fetchKategori,
+    });
+
+    const createMutation = useMutation({
+        mutationFn: createKategori,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['kategori'] });
+        },
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: number; data: Partial<KategoriBahan> }) => 
+            updateKategori(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['kategori'] });
+        },
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: deleteKategori,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['kategori'] });
+        },
+    });
+
+    return {
+        kategori: kategoriQuery.data || [],
+        isLoading: kategoriQuery.isLoading,
+        error: kategoriQuery.error,
+        createKategori: createMutation.mutateAsync,
+        updateKategori: updateMutation.mutateAsync,
+        deleteKategori: deleteMutation.mutateAsync,
     };
 };

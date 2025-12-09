@@ -108,16 +108,30 @@ export const fetchKategori = async (): Promise<KategoriBahan[]> => {
     return response.json();
 };
 
-export const createBahan = async (data: Omit<BahanSisa, 'bahan_id' | 'created_at' | 'updated_at'>): Promise<BahanSisa> => {
+export const createBahan = async (data: Omit<BahanSisa, 'bahan_id' | 'created_at' | 'updated_at'>): Promise<{ message: string; id: number; data: BahanSisa }> => {
+    console.log('createBahan called with:', data);
+    
     const response = await fetch(`${API_URL}/inventory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
+
+    console.log('Response status:', response.status);
+    const responseText = await response.text();
+    console.log('Response text:', responseText);
+
     if (!response.ok) {
-        throw new Error('Failed to create item');
+        let errorData;
+        try {
+        errorData = JSON.parse(responseText);
+        } catch (e) {
+        throw new Error(`Server error: ${response.status} - ${responseText}`);
+        }
+        throw new Error(errorData.message || errorData.error || 'Failed to create item');
     }
-    return response.json();
+
+    return JSON.parse(responseText);
 };
 
 export const updateBahan = async (id: number, data: Partial<BahanSisa>): Promise<void> => {
@@ -160,5 +174,39 @@ export const postStokKeluar = async (data: { bahan_id: number; jumlah: number; u
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to post stok keluar');
+    }
+};
+
+export const createKategori = async (data: Omit<KategoriBahan, 'kategori_id'>): Promise<void> => {
+    const response = await fetch(`${API_URL}/kategori`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create kategori');
+    }
+};
+
+export const updateKategori = async (id: number, data: Partial<KategoriBahan>): Promise<void> => {
+    const response = await fetch(`${API_URL}/kategori/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update kategori');
+    }
+};
+
+export const deleteKategori = async (id: number): Promise<void> => {
+    const response = await fetch(`${API_URL}/kategori/${id}`, {
+        method: 'DELETE',
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete kategori');
     }
 };

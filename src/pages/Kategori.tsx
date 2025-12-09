@@ -13,12 +13,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { kategoriBahan as initialKategori } from '@/data/mockData';
+import { useKategori } from '@/hooks/useInventory';
 import type { KategoriBahan } from '@/types/database';
 
 export default function KategoriPage() {
   const { toast } = useToast();
-  const [kategoriList, setKategoriList] = useState(initialKategori);
+  const { kategori: kategoriList, isLoading, createKategori, updateKategori, deleteKategori } = useKategori();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingKategori, setEditingKategori] = useState<KategoriBahan | null>(null);
   const [namaKategori, setNamaKategori] = useState('');
@@ -35,7 +36,7 @@ export default function KategoriPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!namaKategori.trim()) {
       toast({
         title: "Error",
@@ -45,28 +46,48 @@ export default function KategoriPage() {
       return;
     }
 
-    if (editingKategori) {
-      setKategoriList(prev => prev.map(k => 
-        k.kategori_id === editingKategori.kategori_id 
-          ? { ...k, nama_kategori: namaKategori }
-          : k
-      ));
-      toast({ title: "Berhasil", description: "Kategori berhasil diperbarui" });
-    } else {
-      const newKategori: KategoriBahan = {
-        kategori_id: Math.max(...kategoriList.map(k => k.kategori_id)) + 1,
-        nama_kategori: namaKategori,
-      };
-      setKategoriList(prev => [...prev, newKategori]);
-      toast({ title: "Berhasil", description: "Kategori baru berhasil ditambahkan" });
+    try {
+      if (editingKategori) {
+        await updateKategori({
+          id: editingKategori.kategori_id,
+          data: { nama_kategori: namaKategori }
+        });
+        toast({ 
+          title: "Berhasil", 
+          description: "Kategori berhasil diperbarui" 
+        });
+      } else {
+        await createKategori({ nama_kategori: namaKategori });
+        toast({ 
+          title: "Berhasil", 
+          description: "Kategori baru berhasil ditambahkan" 
+        });
+      }
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Terjadi kesalahan",
+        variant: "destructive",
+      });
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = (kategori: KategoriBahan) => {
+  const handleDelete = async (kategori: KategoriBahan) => {
     if (confirm(`Hapus kategori "${kategori.nama_kategori}"?`)) {
-      setKategoriList(prev => prev.filter(k => k.kategori_id !== kategori.kategori_id));
-      toast({ title: "Berhasil", description: "Kategori berhasil dihapus" });
+      try {
+        await deleteKategori(kategori.kategori_id);
+        toast({ 
+          title: "Berhasil", 
+          description: "Kategori berhasil dihapus" 
+        });
+      } catch (error: any) {
+        toast({
+          title: "Gagal",
+          description: error.message || "Gagal menghapus kategori",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -110,6 +131,10 @@ export default function KategoriPage() {
       )
     }
   ];
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading...</div>;
+  }
 
   return (
     <div className="space-y-6">

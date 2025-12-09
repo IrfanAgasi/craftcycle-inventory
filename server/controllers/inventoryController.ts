@@ -28,16 +28,16 @@ export const getInventoryById = async (req: Request, res: Response) => {
 };
 
 export const createInventory = async (req: Request, res: Response) => {
-    const { nama_bahan, kategori_id, berat_ukuran, warna, kondisi, stok_total } = req.body;
+    const { nama_bahan, kategori_id, berat_ukuran, warna, stok_total } = req.body;
 
-    if (!nama_bahan || !kategori_id || !berat_ukuran || !warna || !kondisi) {
+    if (!nama_bahan || !kategori_id || !berat_ukuran || !warna || stok_total === undefined) {
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
     try {
         const [result] = await db.query<ResultSetHeader>(
-            'INSERT INTO bahan_sisa (nama_bahan, kategori_id, berat_ukuran, warna, kondisi, stok_total) VALUES (?, ?, ?, ?, ?, ?)',
-            [nama_bahan, kategori_id, berat_ukuran, warna, kondisi, stok_total || 0]
+            'INSERT INTO bahan_sisa (nama_bahan, kategori_id, berat_ukuran, warna, stok_total) VALUES (?, ?, ?, ?, ?)',
+            [nama_bahan, kategori_id, berat_ukuran, warna, stok_total || 0]
         );
         res.status(201).json({
             message: 'Item created',
@@ -52,12 +52,12 @@ export const createInventory = async (req: Request, res: Response) => {
 
 export const updateInventory = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { nama_bahan, kategori_id, berat_ukuran, warna, kondisi, stok_total } = req.body;
+    const { nama_bahan, kategori_id, berat_ukuran, warna, stok_total } = req.body;
 
     try {
         const [result] = await db.query<ResultSetHeader>(
-            'UPDATE bahan_sisa SET nama_bahan = ?, kategori_id = ?, berat_ukuran = ?, warna = ?, kondisi = ?, stok_total = ? WHERE bahan_id = ?',
-            [nama_bahan, kategori_id, berat_ukuran, warna, kondisi, stok_total, id]
+            'UPDATE bahan_sisa SET nama_bahan = ?, kategori_id = ?, berat_ukuran = ?, warna = ?, stok_total = ? WHERE bahan_id = ?',
+            [nama_bahan, kategori_id, berat_ukuran, warna, stok_total, id]
         );
 
         if (result.affectedRows === 0) {

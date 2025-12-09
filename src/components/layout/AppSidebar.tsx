@@ -56,7 +56,7 @@ const menuItems = [
     title: 'Bahan Rusak', 
     url: '/rusak', 
     icon: AlertTriangle,
-    roles: ['admin', 'manager'] as const
+    roles: ['admin', 'staff', 'manager'] as const
   },
   { 
     title: 'Kategori', 

@@ -14,7 +14,7 @@ export interface KategoriBahan {
   nama_kategori: string;
 }
 
-export type KondisiBahan = 'mentah' | 'siap-olah' | 'rusak';
+// export type KondisiBahan = 'mentah' | 'siap-olah' | 'rusak';
 
 export interface BahanSisa {
   bahan_id: number;
@@ -23,7 +23,7 @@ export interface BahanSisa {
   kategori?: KategoriBahan;
   berat_ukuran: string;
   warna: string;
-  kondisi: KondisiBahan;
+  // kondisi: KondisiBahan;
   stok_total: number;
   created_at: string;
   updated_at: string;

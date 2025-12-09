@@ -24,7 +24,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useInventory } from '@/hooks/useInventory';
-import type { BahanSisa, KondisiBahan } from '@/types/database';
+import type { BahanSisa } from '@/types/database';
+
+const API_URL = 'http://localhost:3000/api';
 
 export default function BahanSisaPage() {
   const { hasRole } = useAuth();
@@ -34,7 +36,7 @@ export default function BahanSisaPage() {
 
   const [search, setSearch] = useState('');
   const [filterKategori, setFilterKategori] = useState('all');
-  const [filterKondisi, setFilterKondisi] = useState('all');
+  // const [filterKondisi, setFilterKondisi] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBahan, setEditingBahan] = useState<BahanSisa | null>(null);
 
@@ -43,7 +45,6 @@ export default function BahanSisaPage() {
     kategori_id: '',
     berat_ukuran: '',
     warna: '',
-    kondisi: 'mentah' as KondisiBahan,
     stok_total: 0,
   });
 
@@ -52,8 +53,8 @@ export default function BahanSisaPage() {
     const matchSearch = b.nama_bahan.toLowerCase().includes(search.toLowerCase()) ||
       b.warna.toLowerCase().includes(search.toLowerCase());
     const matchKategori = filterKategori === 'all' || b.kategori_id.toString() === filterKategori;
-    const matchKondisi = filterKondisi === 'all' || b.kondisi === filterKondisi;
-    return matchSearch && matchKategori && matchKondisi;
+    // const matchKondisi = filterKondisi === 'all' || b.kondisi === filterKondisi;
+    return matchSearch && matchKategori;
   });
 
   const openAddDialog = () => {
@@ -63,7 +64,6 @@ export default function BahanSisaPage() {
       kategori_id: '',
       berat_ukuran: '',
       warna: '',
-      kondisi: 'mentah',
       stok_total: 0,
     });
     setIsDialogOpen(true);
@@ -76,14 +76,14 @@ export default function BahanSisaPage() {
       kategori_id: bahan.kategori_id.toString(),
       berat_ukuran: bahan.berat_ukuran,
       warna: bahan.warna,
-      kondisi: bahan.kondisi,
+      // kondisi: bahan.kondisi,
       stok_total: bahan.stok_total,
     });
     setIsDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!formData.nama_bahan || !formData.kategori_id) {
+    if (!formData.nama_bahan.trim() || !formData.kategori_id || !formData.berat_ukuran.trim() || !formData.warna.trim()) {
       toast({
         title: "Error",
         description: "Mohon lengkapi semua field",
@@ -93,24 +93,85 @@ export default function BahanSisaPage() {
     }
 
     try {
+      const payload = {
+        nama_bahan: formData.nama_bahan.trim(),
+        kategori_id: parseInt(formData.kategori_id),
+        berat_ukuran: formData.berat_ukuran.trim(),
+        warna: formData.warna.trim(),
+        stok_total: editingBahan ? formData.stok_total : (formData.stok_total || 0)
+      };
+
       if (editingBahan) {
         await updateBahan({
           id: editingBahan.bahan_id,
-          data: { ...formData, kategori_id: parseInt(formData.kategori_id) }
+          data: payload
         });
         toast({ title: "Berhasil", description: "Bahan berhasil diperbarui" });
       } else {
-        await createBahan({
-          ...formData,
-          kategori_id: parseInt(formData.kategori_id),
-        });
-        toast({ title: "Berhasil", description: "Bahan baru berhasil ditambahkan" });
+        const result: any = await createBahan(payload);
+        console.log('Create result:', result);
+        
+        const newBahanId = result?.bahan_id || result?.data?.bahan_id || result?.id;
+        console.log('New Bahan ID:', newBahanId);
+        
+        // Jika ada stok awal, catat sebagai transaksi stok masuk
+        if (formData.stok_total > 0 && newBahanId) {
+          try {
+            const token = localStorage.getItem('token');
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const userId = user?.user_id || 1;
+
+            const stokMasukPayload = {
+              bahan_id: newBahanId, 
+              jumlah: formData.stok_total,
+              keterangan: 'Stok awal saat menambah bahan baru',
+              user_id: userId
+            };
+            
+            console.log('Payload stok masuk:', stokMasukPayload);
+            
+            // Panggil API untuk create stok masuk
+            const stokResponse = await fetch(`${API_URL}/transactions/in`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token') || ''}`},
+              body: JSON.stringify(stokMasukPayload)
+            });
+
+            const responseData = await stokResponse.json();
+            
+            if (stokResponse.ok) {
+              console.log('Riwayat stok masuk berhasil tercatat');
+              toast({ 
+                title: "Berhasil", 
+                description: "Bahan dan stok awal berhasil ditambahkan" 
+              });
+            } else {
+              console.error('Gagal mencatat riwayat stok:', responseData);
+              toast({
+                title: "Peringatan",
+                description: "Bahan berhasil ditambah, tetapi gagal mencatat riwayat stok",
+                variant: "destructive",
+              });
+            }
+          } catch (stokError) {
+           console.error('Exception saat mencatat riwayat stok:', stokError);
+            toast({
+              title: "Peringatan",
+              description: "Bahan berhasil ditambah, tetapi gagal mencatat riwayat stok",
+              variant: "destructive",
+            });
+          }
+        } else {
+          toast({ title: "Berhasil", description: "Bahan baru berhasil ditambahkan" });
+        }
       }
       setIsDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error:', error);
       toast({
         title: "Error",
-        description: "Gagal menyimpan data",
+        description: error.response?.data?.message || "Gagal menyimpan data. Cek console untuk detail",
         variant: "destructive",
       });
     }
@@ -151,15 +212,15 @@ export default function BahanSisaPage() {
     },
     { key: 'berat_ukuran', header: 'Ukuran' },
     { key: 'warna', header: 'Warna' },
-    {
-      key: 'kondisi',
-      header: 'Kondisi',
-      render: (item: BahanSisa) => {
-        const variant = item.kondisi === 'siap-olah' ? 'success' :
-          item.kondisi === 'mentah' ? 'warning' : 'danger';
-        return <Y2KBadge variant={variant}>{item.kondisi}</Y2KBadge>;
-      }
-    },
+    // {
+    //   key: 'kondisi',
+    //   header: 'Kondisi',
+    //   render: (item: BahanSisa) => {
+    //     const variant = item.kondisi === 'siap-olah' ? 'success' :
+    //       item.kondisi === 'mentah' ? 'warning' : 'danger';
+    //     return <Y2KBadge variant={variant}>{item.kondisi}</Y2KBadge>;
+    //   }
+    // },
     {
       key: 'stok_total',
       header: 'Stok',
@@ -194,7 +255,7 @@ export default function BahanSisaPage() {
               </Button>
             </>
           )}
-          {hasRole(['admin', 'staff']) && (
+          {hasRole(['admin', 'manager']) && (
             <Button
               size="sm"
               variant="outline"
@@ -226,7 +287,7 @@ export default function BahanSisaPage() {
         description="Kelola inventaris bahan sisa"
         icon={Package}
       >
-        {hasRole(['admin', 'staff']) && (
+        {hasRole(['admin']) && (
           <Button
             onClick={openAddDialog}
             className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90"
@@ -262,7 +323,7 @@ export default function BahanSisaPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={filterKondisi} onValueChange={setFilterKondisi}>
+        {/* <Select value={filterKondisi} onValueChange={setFilterKondisi}>
           <SelectTrigger className="w-full sm:w-40 rounded-xl border-2">
             <SelectValue placeholder="Kondisi" />
           </SelectTrigger>
@@ -272,7 +333,7 @@ export default function BahanSisaPage() {
             <SelectItem value="siap-olah">Siap Olah</SelectItem>
             <SelectItem value="rusak">Rusak</SelectItem>
           </SelectContent>
-        </Select>
+        </Select> */}
       </div>
 
       <DataTable data={filteredBahan} columns={columns} />
@@ -330,8 +391,8 @@ export default function BahanSisaPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            {/* <div className="grid grid-cols-2 gap-4"> */}
+              {/* <div className="space-y-2">
                 <Label>Kondisi</Label>
                 <Select
                   value={formData.kondisi}
@@ -346,17 +407,20 @@ export default function BahanSisaPage() {
                     <SelectItem value="rusak">Rusak</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
               <div className="space-y-2">
-                <Label>Stok Awal</Label>
+                <Label>{editingBahan ? 'Stok Total' : 'Stok Awal'}</Label>
                 <Input
                   type="number"
                   value={formData.stok_total}
                   onChange={(e) => setFormData(prev => ({ ...prev, stok_total: parseInt(e.target.value) || 0 }))}
-                  className="rounded-xl border-2"
+                disabled={!!editingBahan}
+                className={`rounded-xl border-2 ${editingBahan ? 'bg-muted cursor-not-allowed' : ''}`}
+                min={0}
+                placeholder={editingBahan ? "Stok total tidak dapat diubah" : "Masukkan stok awal"}
                 />
               </div>
-            </div>
+            {/* </div> */}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
