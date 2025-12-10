@@ -231,7 +231,6 @@ export default function RiwayatPage() {
               <SelectItem value="masuk">Masuk</SelectItem>
               <SelectItem value="keluar">Keluar</SelectItem>
               <SelectItem value="rusak">Rusak</SelectItem>
-              <SelectItem value="produksi">Produksi</SelectItem>
             </SelectContent>
           </Select>
 
