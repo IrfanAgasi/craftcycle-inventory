@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Package, Plus, Search, Filter, Edit, Trash2 } from 'lucide-react';
+import { Package, Plus, Search, Filter, Edit, Trash2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
 import { Y2KBadge } from '@/components/ui/y2k-badge';
@@ -39,6 +39,16 @@ export default function BahanSisaPage() {
   // const [filterKondisi, setFilterKondisi] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBahan, setEditingBahan] = useState<BahanSisa | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'nama_bahan', direction: 'asc' });
+
+  const handleSort = (key: string) => {
+    setSortConfig(current => {
+      if (current?.key === key) {
+        return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
 
   const [formData, setFormData] = useState({
     nama_bahan: '',
@@ -55,6 +65,29 @@ export default function BahanSisaPage() {
     const matchKategori = filterKategori === 'all' || b.kategori_id.toString() === filterKategori;
     // const matchKondisi = filterKondisi === 'all' || b.kondisi === filterKondisi;
     return matchSearch && matchKategori;
+  }).sort((a, b) => {
+    if (!sortConfig) return 0;
+    const { key, direction } = sortConfig;
+
+    let aValue: any = (a as any)[key];
+    let bValue: any = (b as any)[key];
+
+    if (key === 'kategori') {
+      // Find category name for sorting
+      const catA = kategoriList.find(k => k.kategori_id === a.kategori_id);
+      const catB = kategoriList.find(k => k.kategori_id === b.kategori_id);
+      aValue = catA ? catA.nama_kategori : '';
+      bValue = catB ? catB.nama_kategori : '';
+    }
+
+    if (typeof aValue === 'string') {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
+    }
+
+    if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+    return 0;
   });
 
   const openAddDialog = () => {
@@ -110,10 +143,10 @@ export default function BahanSisaPage() {
       } else {
         const result: any = await createBahan(payload);
         console.log('Create result:', result);
-        
+
         const newBahanId = result?.bahan_id || result?.data?.bahan_id || result?.id;
         console.log('New Bahan ID:', newBahanId);
-        
+
         // Jika ada stok awal, catat sebagai transaksi stok masuk
         if (formData.stok_total > 0 && newBahanId) {
           try {
@@ -123,28 +156,28 @@ export default function BahanSisaPage() {
             const userId = user?.user_id || 1;
 
             const stokMasukPayload = {
-              bahan_id: newBahanId, 
+              bahan_id: newBahanId,
               jumlah: formData.stok_total,
               keterangan: 'Stok awal saat menambah bahan baru',
               user_id: userId
             };
-            
+
             console.log('Payload stok masuk:', stokMasukPayload);
-            
+
             // Panggil API untuk create stok masuk
             const stokResponse = await fetch(`${API_URL}/transactions/in`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token') || ''}`},
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` },
               body: JSON.stringify(stokMasukPayload)
             });
 
             const responseData = await stokResponse.json();
-            
+
             if (stokResponse.ok) {
               console.log('Riwayat stok masuk berhasil tercatat');
-              toast({ 
-                title: "Berhasil", 
-                description: "Bahan dan stok awal berhasil ditambahkan" 
+              toast({
+                title: "Berhasil",
+                description: "Bahan dan stok awal berhasil ditambahkan"
               });
             } else {
               console.error('Gagal mencatat riwayat stok:', responseData);
@@ -155,7 +188,7 @@ export default function BahanSisaPage() {
               });
             }
           } catch (stokError) {
-           console.error('Exception saat mencatat riwayat stok:', stokError);
+            console.error('Exception saat mencatat riwayat stok:', stokError);
             toast({
               title: "Peringatan",
               description: "Bahan berhasil ditambah, tetapi gagal mencatat riwayat stok",
@@ -193,25 +226,42 @@ export default function BahanSisaPage() {
     return kat ? kat.nama_kategori : 'Unknown';
   };
 
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig?.key !== columnKey) return <ArrowUpCircle className="w-4 h-4 text-muted-foreground/30" />;
+    return sortConfig.direction === 'asc'
+      ? <ArrowUpCircle className="w-4 h-4 text-primary" />
+      : <ArrowDownCircle className="w-4 h-4 text-primary" />;
+  };
+
+  const renderHeader = (label: string, key: string) => (
+    <div
+      className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors select-none"
+      onClick={() => handleSort(key)}
+    >
+      {label}
+      <SortIcon columnKey={key} />
+    </div>
+  );
+
   const columns = [
     {
       key: 'nama_bahan',
-      header: 'Nama Bahan',
+      header: renderHeader('Nama Bahan', 'nama_bahan'),
       render: (item: BahanSisa) => (
         <span className="font-medium">{item.nama_bahan}</span>
       )
     },
     {
       key: 'kategori',
-      header: 'Kategori',
+      header: renderHeader('Kategori', 'kategori'),
       render: (item: BahanSisa) => (
         <Y2KBadge variant="lavender">
           {getKategoriName(item.kategori_id)}
         </Y2KBadge>
       )
     },
-    { key: 'berat_ukuran', header: 'Ukuran' },
-    { key: 'warna', header: 'Warna' },
+    { key: 'berat_ukuran', header: renderHeader('Ukuran', 'berat_ukuran') },
+    { key: 'warna', header: renderHeader('Warna', 'warna') },
     // {
     //   key: 'kondisi',
     //   header: 'Kondisi',
@@ -223,7 +273,7 @@ export default function BahanSisaPage() {
     // },
     {
       key: 'stok_total',
-      header: 'Stok',
+      header: renderHeader('Stok', 'stok_total'),
       render: (item: BahanSisa) => (
         <span className={item.stok_total < 10 ? 'text-destructive font-bold' : 'font-medium'}>
           {item.stok_total}
@@ -392,7 +442,7 @@ export default function BahanSisaPage() {
               </div>
             </div>
             {/* <div className="grid grid-cols-2 gap-4"> */}
-              {/* <div className="space-y-2">
+            {/* <div className="space-y-2">
                 <Label>Kondisi</Label>
                 <Select
                   value={formData.kondisi}
@@ -408,18 +458,18 @@ export default function BahanSisaPage() {
                   </SelectContent>
                 </Select>
               </div> */}
-              <div className="space-y-2">
-                <Label>{editingBahan ? 'Stok Total' : 'Stok Awal'}</Label>
-                <Input
-                  type="number"
-                  value={formData.stok_total}
-                  onChange={(e) => setFormData(prev => ({ ...prev, stok_total: parseInt(e.target.value) || 0 }))}
+            <div className="space-y-2">
+              <Label>{editingBahan ? 'Stok Total' : 'Stok Awal'}</Label>
+              <Input
+                type="number"
+                value={formData.stok_total}
+                onChange={(e) => setFormData(prev => ({ ...prev, stok_total: parseInt(e.target.value) || 0 }))}
                 disabled={!!editingBahan}
                 className={`rounded-xl border-2 ${editingBahan ? 'bg-muted cursor-not-allowed' : ''}`}
                 min={0}
                 placeholder={editingBahan ? "Stok total tidak dapat diubah" : "Masukkan stok awal"}
-                />
-              </div>
+              />
+            </div>
             {/* </div> */}
           </div>
           <DialogFooter>
