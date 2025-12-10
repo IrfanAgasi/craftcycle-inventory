@@ -32,6 +32,21 @@ export default function StokKeluarPage() {
     keterangan: '',
   });
 
+  const [selectedNamaBahan, setSelectedNamaBahan] = useState<string>('');
+
+  // Derived state for selection
+  const uniqueNamaBahan = Array.from(new Set(bahanList.map(b => b.nama_bahan))).sort();
+
+  const filteredBahanList = bahanList.filter(b => b.nama_bahan === selectedNamaBahan);
+
+  // Auto-select nama bahan if editing/preselected
+  if (preselectedBahan && !selectedNamaBahan && bahanList.length > 0) {
+    const bahan = bahanList.find(b => b.bahan_id.toString() === preselectedBahan);
+    if (bahan) {
+      setSelectedNamaBahan(bahan.nama_bahan);
+    }
+  }
+
   const selectedBahan = bahanList.find(b => b.bahan_id.toString() === formData.bahan_id);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,30 +117,59 @@ export default function StokKeluarPage() {
         <form onSubmit={handleSubmit} className="y2k-card p-6 space-y-6">
           <div className="space-y-2">
             <Label>Pilih Bahan</Label>
-            <Select
-              value={formData.bahan_id}
-              onValueChange={(v) => setFormData(prev => ({ ...prev, bahan_id: v }))}
-            >
-              <SelectTrigger className="rounded-xl border-2 h-12">
-                <SelectValue placeholder="Pilih bahan..." />
-              </SelectTrigger>
-              <SelectContent>
-                {bahanList.map(b => (
-                  <SelectItem key={b.bahan_id} value={b.bahan_id.toString()}>
-                    <div className="flex items-center gap-2">
-                      <span>{b.nama_bahan}</span>
-                      <span className="text-muted-foreground">
-                        ({b.warna}) - Stok: {b.stok_total}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedBahan && (
-              <p className="text-sm text-muted-foreground">
-                Stok tersedia: <strong>{selectedBahan.stok_total}</strong>
-              </p>
+
+            {/* Step 1: Pilih Nama Bahan */}
+            <div className="space-y-2">
+              <Select
+                value={selectedNamaBahan}
+                onValueChange={(v) => {
+                  setSelectedNamaBahan(v);
+                  setFormData(prev => ({ ...prev, bahan_id: '' })); // Reset selection
+                }}
+              >
+                <SelectTrigger className="rounded-xl border-2 h-12">
+                  <SelectValue placeholder="Pilih Nama Bahan..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniqueNamaBahan.map(nama => (
+                    <SelectItem key={nama} value={nama}>
+                      {nama}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Step 2: Pilih Warna/Varian */}
+            {selectedNamaBahan && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                <Select
+                  value={formData.bahan_id}
+                  onValueChange={(v) => setFormData(prev => ({ ...prev, bahan_id: v }))}
+                >
+                  <SelectTrigger className="rounded-xl border-2 h-12">
+                    <SelectValue placeholder="Pilih Warna/Varian..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredBahanList.map(b => (
+                      <SelectItem key={b.bahan_id} value={b.bahan_id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <span className="capitalize">{b.warna}</span>
+                          <span className="text-muted-foreground text-xs">
+                            ({b.berat_ukuran}) - Stok: {b.stok_total}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {selectedBahan && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Stok tersedia: <strong>{selectedBahan.stok_total}</strong>
+                  </p>
+                )}
+              </div>
             )}
           </div>
 

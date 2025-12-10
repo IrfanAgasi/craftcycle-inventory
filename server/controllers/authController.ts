@@ -13,16 +13,26 @@ export const login = async (req: Request, res: Response) => {
     try {
         const [users] = await db.query<any[]>('SELECT * FROM users WHERE email = ?', [email]);
 
+        console.log('--- Login Attempt ---');
+        console.log('Email:', email);
+
         if (users.length === 0) {
+            console.log('User not found');
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
         const user = users[0];
+        console.log('User found:', user.email);
 
         // Hash password with MD5 to match database
         const hashedPassword = crypto.createHash('md5').update(password).digest('hex');
 
+        console.log('Input Password:', password);
+        console.log('Calculated Hash:', hashedPassword);
+        console.log('Stored Hash:    ', user.password);
+
         if (hashedPassword !== user.password) {
+            console.log('Hash Mismatch!');
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 

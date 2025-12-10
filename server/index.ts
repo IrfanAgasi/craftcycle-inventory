@@ -16,8 +16,6 @@ import authRoutes from './routes/authRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import userRoutes from './routes/userRoutes';
 
-// ... (other imports)
-
 app.use(cors());
 app.use(express.json());
 
