@@ -1,4 +1,4 @@
-import { BahanSisa, KategoriBahan, RiwayatStok, User } from '../types/database';
+import { BahanSisa, KategoriBahan, RiwayatStok, User, BahanRusak} from '../types/database';
 
 export interface RiwayatStokExtended extends RiwayatStok {
     nama_bahan: string;
@@ -16,6 +16,20 @@ export interface DashboardStats {
     produksiBulanIni: number;
     rusakBulanIni: number;
     lowStockBahan: BahanSisa[];
+}
+
+export interface BahanRusakExtended {
+  rusak_id: number;
+  bahan_id: number;
+  jumlah: number;
+  alasan: string;
+  user_id: number;
+  tanggal_rusak: string;
+  nama_bahan: string;
+  warna: string;
+  berat_ukuran: string;
+  user_name: string;
+  user_role: string;
 }
 
 const API_URL = 'http://localhost:3000/api';
@@ -221,4 +235,12 @@ export const deleteKategori = async (id: number): Promise<void> => {
         const error = await response.json();
         throw new Error(error.message || 'Failed to delete kategori');
     }
+};
+
+export const fetchBahanRusak = async (): Promise<BahanRusakExtended[]> => {
+    const response = await fetch(`${API_URL}/bahan-rusak`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch bahan rusak');
+    }
+    return response.json();
 };

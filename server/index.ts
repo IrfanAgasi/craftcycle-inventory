@@ -15,6 +15,7 @@ import historyRoutes from './routes/historyRoutes';
 import authRoutes from './routes/authRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import userRoutes from './routes/userRoutes';
+import rusakRoutes from './routes/rusakRoutes';
 
 app.use(cors());
 app.use(express.json());
@@ -26,6 +27,7 @@ app.use('/api/history', historyRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api', rusakRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', async (req, res) => {

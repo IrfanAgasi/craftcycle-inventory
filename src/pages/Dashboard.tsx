@@ -55,15 +55,6 @@ export default function Dashboard() {
     { key: 'berat_ukuran', header: 'Ukuran' },
     { key: 'warna', header: 'Warna' },
     {
-      key: 'kondisi',
-      header: 'Kondisi',
-      render: (item: BahanSisa) => {
-        const variant = item.kondisi === 'siap-olah' ? 'success' :
-          item.kondisi === 'mentah' ? 'warning' : 'danger';
-        return <Y2KBadge variant={variant}>{item.kondisi}</Y2KBadge>;
-      }
-    },
-    {
       key: 'stok_total',
       header: 'Stok',
       render: (item: BahanSisa) => (

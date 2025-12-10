@@ -32,6 +32,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             // Actually, looking at `Dashboard.tsx`: `rusakBulanIni` comes from `bahanRusak` mock data.
             // I'll stick to simple counts we have.
 
+            //bahanrusak
+            db.query('SELECT SUM(jumlah) as total FROM bahan_rusak WHERE MONTH(tanggal_rusak) = ?', [currentMonth]),
             // Low Stock
             db.query('SELECT * FROM bahan_sisa WHERE stok_total < 10')
         ];
@@ -44,7 +46,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         const [masukRows] = results[3] as any;
         const [keluarRows] = results[4] as any;
         const [produksiRows] = results[5] as any;
-        const [lowStockRows] = results[6] as any;
+        const [rusakRows] = results[6] as any;
+        const [lowStockRows] = results[7] as any;
 
         const stats = {
             totalBahan: bahanRows[0].count,
@@ -53,7 +56,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             stokMasukBulanIni: masukRows[0].total || 0,
             stokKeluarBulanIni: keluarRows[0].total || 0,
             produksiBulanIni: produksiRows[0].count,
-            rusakBulanIni: 0, // Placeholder
+            rusakBulanIni: Math.floor(rusakRows[0].total || 0),
             lowStockBahan: lowStockRows
         };
 

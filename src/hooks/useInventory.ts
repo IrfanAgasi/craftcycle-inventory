@@ -16,9 +16,11 @@ import {
     restoreUser,
     createKategori,
     updateKategori,
-    deleteKategori
+    deleteKategori,
+    fetchBahanRusak,
 } from '../services/api';
 import { BahanSisa, User, KategoriBahan } from '../types/database';
+import type { BahanRusakExtended } from '@/services/api';
 
 export const useHistory = () => {
     return useQuery({
@@ -180,4 +182,12 @@ export const useKategori = () => {
         updateKategori: updateMutation.mutateAsync,
         deleteKategori: deleteMutation.mutateAsync,
     };
+};
+
+export const useBahanRusak = () => {
+    return useQuery<BahanRusakExtended[]>({
+        queryKey: ['bahanRusak'],
+        queryFn: fetchBahanRusak,
+        staleTime: 30000, // 30 seconds
+    });
 };
