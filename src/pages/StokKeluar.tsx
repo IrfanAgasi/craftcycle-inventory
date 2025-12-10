@@ -17,6 +17,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useInventory } from '@/hooks/useInventory';
 
+import { produkJadi } from '@/data/mockData';
+
 export default function StokKeluarPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -30,6 +32,7 @@ export default function StokKeluarPage() {
     jumlah: '',
     alasan: '',
     keterangan: '',
+    produk_id: '', // New field for product selection
   });
 
   const [selectedNamaBahan, setSelectedNamaBahan] = useState<string>('');
@@ -52,10 +55,31 @@ export default function StokKeluarPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validasi Field Wajib
     if (!formData.bahan_id || !formData.jumlah || !formData.alasan) {
       toast({
         title: "Error",
         description: "Mohon lengkapi semua field wajib",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validasi Tambahan Produksi
+    if (formData.alasan === 'tambahan_produksi' && !formData.produk_id) {
+      toast({
+        title: "Error",
+        description: "Mohon pilih produk untuk tambahan produksi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validasi Keterangan Wajib (Rusak & Lainnya)
+    if ((formData.alasan === 'rusak' || formData.alasan === 'lainnya') && !formData.keterangan) {
+      toast({
+        title: "Error",
+        description: "Mohon isi keterangan alasan",
         variant: "destructive",
       });
       return;
@@ -81,21 +105,36 @@ export default function StokKeluarPage() {
     }
 
     try {
+      let finalKeterangan = formData.keterangan;
+      let displayAlasan = formData.alasan;
+
+      if (formData.alasan === 'tambahan_produksi') {
+        const produk = produkJadi.find(p => p.produk_id.toString() === formData.produk_id);
+        const namaProduk = produk ? produk.nama_produk : 'Unknown';
+        finalKeterangan = `Tambahan Produksi (${namaProduk}): ${formData.keterangan}`;
+        displayAlasan = 'tambahan produksi';
+      } else if (formData.alasan === 'lainnya') {
+        finalKeterangan = `Lainnya: ${formData.keterangan}`;
+      } else if (formData.alasan === 'rusak') {
+        // Rusak logic handled by backend usually marking field, but here we append to description too for safety
+        finalKeterangan = `Rusak: ${formData.keterangan}`;
+      }
+
       await stokKeluar({
         bahan_id: parseInt(formData.bahan_id),
         jumlah: jumlah,
         user_id: user.user_id,
-        keterangan: `${formData.alasan}: ${formData.keterangan}`
+        keterangan: finalKeterangan // Send constructed string
       });
 
       const isRusak = formData.alasan === 'rusak';
 
       toast({
         title: isRusak ? "Bahan Rusak Dicatat! ⚠️" : "Stok Keluar Berhasil! ✨",
-        description: `${formData.jumlah} unit ${selectedBahan?.nama_bahan} telah dikurangi`,
+        description: `${formData.jumlah} unit ${selectedBahan?.nama_bahan} telah dikurangi (${displayAlasan})`,
       });
 
-      setFormData({ bahan_id: '', jumlah: '', alasan: '', keterangan: '' });
+      setFormData({ bahan_id: '', jumlah: '', alasan: '', keterangan: '', produk_id: '' });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -190,18 +229,44 @@ export default function StokKeluarPage() {
             <Label>Alasan Pengeluaran</Label>
             <Select
               value={formData.alasan}
-              onValueChange={(v) => setFormData(prev => ({ ...prev, alasan: v }))}
+              onValueChange={(v) => {
+                setFormData(prev => ({ ...prev, alasan: v }));
+                if (v !== 'tambahan_produksi') {
+                  setFormData(prev => ({ ...prev, produk_id: '' }));
+                }
+              }}
             >
               <SelectTrigger className="rounded-xl border-2 h-12">
                 <SelectValue placeholder="Pilih alasan..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="produksi">Produksi</SelectItem>
+                <SelectItem value="tambahan_produksi">Tambahan Produksi</SelectItem>
                 <SelectItem value="rusak">Rusak</SelectItem>
                 <SelectItem value="lainnya">Lainnya</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {formData.alasan === 'tambahan_produksi' && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+              <Label>Untuk Produksi Apa?</Label>
+              <Select
+                value={formData.produk_id}
+                onValueChange={(v) => setFormData(prev => ({ ...prev, produk_id: v }))}
+              >
+                <SelectTrigger className="rounded-xl border-2 h-12">
+                  <SelectValue placeholder="Pilih Produk..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {produkJadi.map(p => (
+                    <SelectItem key={p.produk_id} value={p.produk_id.toString()}>
+                      {p.nama_produk}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {formData.alasan === 'rusak' && (
             <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 flex items-start gap-3">
@@ -213,13 +278,17 @@ export default function StokKeluarPage() {
           )}
 
           <div className="space-y-2">
-            <Label>Keterangan {formData.alasan === 'rusak' ? '(Wajib)' : '(Opsional)'}</Label>
+            <Label>Keterangan {formData.alasan === 'rusak' || formData.alasan === 'lainnya' ? '(Wajib)' : '(Opsional)'}</Label>
             <Textarea
-              placeholder={formData.alasan === 'rusak' ? 'Jelaskan alasan kerusakan...' : 'Tambahkan keterangan...'}
+              placeholder={
+                formData.alasan === 'rusak' ? 'Jelaskan alasan kerusakan...' :
+                  formData.alasan === 'lainnya' ? 'Jelaskan alasannya...' :
+                    'Tambahkan keterangan...'
+              }
               value={formData.keterangan}
               onChange={(e) => setFormData(prev => ({ ...prev, keterangan: e.target.value }))}
               className="rounded-xl border-2 min-h-24"
-              required={formData.alasan === 'rusak'}
+              required={formData.alasan === 'rusak' || formData.alasan === 'lainnya'}
             />
           </div>
 
