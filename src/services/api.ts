@@ -4,6 +4,7 @@ export interface RiwayatStokExtended extends RiwayatStok {
     nama_bahan: string;
     warna: string;
     user_name: string;
+    user_role: string;
 }
 
 export interface DashboardStats {
@@ -110,7 +111,7 @@ export const fetchKategori = async (): Promise<KategoriBahan[]> => {
 
 export const createBahan = async (data: Omit<BahanSisa, 'bahan_id' | 'created_at' | 'updated_at'>): Promise<{ message: string; id: number; data: BahanSisa }> => {
     console.log('createBahan called with:', data);
-    
+
     const response = await fetch(`${API_URL}/inventory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -124,9 +125,9 @@ export const createBahan = async (data: Omit<BahanSisa, 'bahan_id' | 'created_at
     if (!response.ok) {
         let errorData;
         try {
-        errorData = JSON.parse(responseText);
+            errorData = JSON.parse(responseText);
         } catch (e) {
-        throw new Error(`Server error: ${response.status} - ${responseText}`);
+            throw new Error(`Server error: ${response.status} - ${responseText}`);
         }
         throw new Error(errorData.message || errorData.error || 'Failed to create item');
     }

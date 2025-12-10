@@ -81,10 +81,23 @@ export const stokKeluar = async (req: Request, res: Response) => {
         );
 
         // 3. Catat di riwayat_stok
+        const tipe = (keterangan && keterangan.startsWith('Rusak')) ? 'rusak' : 'keluar';
+
         await connection.query(
             'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, tanggal) VALUES (?, ?, ?, ?, ?, NOW())',
-            [bahan_id, 'keluar', jumlah, user_id, keterangan || 'Stok Keluar']
+            [bahan_id, tipe, jumlah, user_id, keterangan || 'Stok Keluar']
         );
+
+        // 4. Jika Rusak, catat di bahan_rusak
+        if (tipe === 'rusak') {
+            // Extract alasan ("Rusak: ...") -> clean description
+            const cleanAlasan = keterangan ? keterangan.replace('Rusak: ', '') : 'Tidak ada keterangan';
+
+            await connection.query(
+                'INSERT INTO bahan_rusak (bahan_id, jumlah, alasan, user_id, tanggal_rusak) VALUES (?, ?, ?, ?, NOW())',
+                [bahan_id, jumlah, cleanAlasan, user_id]
+            );
+        }
 
         await connection.commit();
         res.status(201).json({ message: 'Stok keluar berhasil dicatat' });
