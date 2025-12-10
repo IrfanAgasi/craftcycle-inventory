@@ -4,13 +4,21 @@ import crypto from 'crypto';
 
 export const getUsers = async (req: Request, res: Response) => {
     try {
-        const [rows] = await db.query<any[]>('SELECT user_id, nama, email, role, created_at FROM users');
+        const { status } = req.query;
+        const isDeleted = status === 'deleted' ? 1 : 0;
+
+        const [rows] = await db.query<any[]>(
+            'SELECT user_id, nama, email, role, created_at FROM users WHERE is_deleted = ?',
+            [isDeleted]
+        );
         res.json(rows);
     } catch (error) {
         console.error('Error fetching users:', error);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 };
+
+/* ... createUser ... */
 
 export const createUser = async (req: Request, res: Response) => {
     const { nama, email, password, role } = req.body;
@@ -40,6 +48,8 @@ export const createUser = async (req: Request, res: Response) => {
     }
 };
 
+/* ... updateUser ... */
+
 export const updateUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { nama, email, password, role } = req.body;
@@ -49,14 +59,14 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 
     try {
-        // Check if user exists
-        const [users] = await db.query<any[]>('SELECT user_id FROM users WHERE user_id = ?', [id]);
+        // Check if user exists (and not deleted)
+        const [users] = await db.query<any[]>('SELECT user_id FROM users WHERE user_id = ? AND is_deleted = 0', [id]);
         if (users.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
 
         // Check duplicate email
-        const [existing] = await db.query<any[]>('SELECT user_id FROM users WHERE email = ? AND user_id != ?', [email, id]);
+        const [existing] = await db.query<any[]>('SELECT user_id FROM users WHERE email = ? AND user_id != ? AND is_deleted = 0', [email, id]);
         if (existing.length > 0) {
             return res.status(400).json({ message: 'Email already used by another user' });
         }
@@ -86,18 +96,24 @@ export const deleteUser = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
-        // Check if user has related data (transactions/history)
-        // Actually, foreign keys might restrict delete.
-        // Ideally we should soft delete or block delete if related data exists. 
-        // For now, try delete and catch error.
-
-        await db.query('DELETE FROM users WHERE user_id = ?', [id]);
+        // Soft Delete
+        await db.query('UPDATE users SET is_deleted = 1 WHERE user_id = ?', [id]);
         res.json({ message: 'User deleted successfully' });
     } catch (error: any) {
         console.error('Error deleting user:', error);
-        if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-            return res.status(400).json({ message: 'Cannot delete user with existing history/transactions' });
-        }
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+
+};
+
+export const restoreUser = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        await db.query('UPDATE users SET is_deleted = 0 WHERE user_id = ?', [id]);
+        res.json({ message: 'User restored successfully' });
+    } catch (error: any) {
+        console.error('Error restoring user:', error);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 };

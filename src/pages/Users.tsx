@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users as UsersIcon, Plus, Edit, Trash2, Shield, User as UserIcon, Briefcase } from 'lucide-react';
+import { Users as UsersIcon, Plus, Edit, Trash2, Shield, User as UserIcon, Briefcase, RefreshCcw } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
 import { Y2KBadge } from '@/components/ui/y2k-badge';
@@ -38,9 +38,28 @@ const roleBadgeVariant: Record<UserRole, 'pink' | 'teal' | 'lavender'> = {
 
 export default function UsersPage() {
   const { toast } = useToast();
-  const { users, createUser, updateUser, deleteUser, isLoading } = useUsers();
+  const [status, setStatus] = useState<'active' | 'deleted'>('active');
+  const { users, createUser, updateUser, deleteUser, restoreUser, isLoading } = useUsers(status);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  /* ... handlers ... */
+  // Preserving handlers but ensuring I don't lose them.
+  // Actually, replace_file_content replaces a block. I need to be careful not to delete handlers if I replace `UsersPage` body.
+  // I will only replace the beginning of component to add state, and the return block to add tabs.
+  // Since I can't easily split edits, I will rewrite the component body logic and return statement mainly.
+
+  // Let's replace the top part first to add state.
+  // Then replace the return part.
+  // Wait, I can do it in two chunks? No, replace_file_content is single contiguous.
+  // I'll use multi_replace.
+
+  // Chunk 1: Add state status
+  // Chunk 2: Add Tabs in JSX
+
+  // Wait, current `useUsers` invocation is line 41: `const { users, ... } = useUsers();`
+  // I change it to `useUsers(status)`.
+
 
   const [formData, setFormData] = useState({
     nama: '',
@@ -131,6 +150,21 @@ export default function UsersPage() {
     }
   };
 
+  const handleRestore = async (user: User) => {
+    if (confirm(`Aktifkan kembali user "${user.nama}"?`)) {
+      try {
+        await restoreUser(user.user_id);
+        toast({ title: "Berhasil", description: "User berhasil diaktifkan kembali" });
+      } catch (error: any) {
+        toast({
+          title: "Gagal",
+          description: error.message || "Gagal mengaktifkan user",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
   const columns = [
     {
       key: 'nama',
@@ -172,22 +206,36 @@ export default function UsersPage() {
       header: 'Aksi',
       render: (item: User) => (
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 w-8 p-0 rounded-lg"
-            onClick={() => openEditDialog(item)}
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 w-8 p-0 rounded-lg border-destructive/50 text-destructive hover:bg-destructive/10"
-            onClick={() => handleDelete(item)}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          {status === 'active' ? (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 w-8 p-0 rounded-lg"
+                onClick={() => openEditDialog(item)}
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 w-8 p-0 rounded-lg border-destructive/50 text-destructive hover:bg-destructive/10"
+                onClick={() => handleDelete(item)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 w-8 p-0 rounded-lg border-success/50 text-success hover:bg-success/10"
+              onClick={() => handleRestore(item)}
+              title="Aktifkan Kembali"
+            >
+              <RefreshCcw className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       )
     }
@@ -200,14 +248,43 @@ export default function UsersPage() {
         description="Manajemen user dan hak akses"
         icon={UsersIcon}
       >
-        <Button
-          onClick={openAddDialog}
-          className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Tambah User
-        </Button>
+        {status === 'active' && (
+          <Button
+            onClick={openAddDialog}
+            className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Tambah User
+          </Button>
+        )}
       </PageHeader>
+
+      <div className="flex space-x-2 border-b-2 border-border/50 pb-1">
+        <button
+          onClick={() => setStatus('active')}
+          className={`px-4 py-2 font-medium text-sm transition-colors relative ${status === 'active'
+            ? 'text-primary'
+            : 'text-muted-foreground hover:text-primary/70'
+            }`}
+        >
+          Akun Aktif
+          {status === 'active' && (
+            <div className="absolute bottom-[-6px] left-0 right-0 h-0.5 bg-primary rounded-full transition-all" />
+          )}
+        </button>
+        <button
+          onClick={() => setStatus('deleted')}
+          className={`px-4 py-2 font-medium text-sm transition-colors relative ${status === 'deleted'
+            ? 'text-destructive'
+            : 'text-muted-foreground hover:text-destructive/70'
+            }`}
+        >
+          Akun Dihapus
+          {status === 'deleted' && (
+            <div className="absolute bottom-[-6px] left-0 right-0 h-0.5 bg-destructive rounded-full transition-all" />
+          )}
+        </button>
+      </div>
 
       {isLoading ? (
         <div>Loading Users...</div>

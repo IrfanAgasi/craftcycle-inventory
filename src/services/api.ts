@@ -30,8 +30,9 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
 
 // --- User API ---
 
-export const fetchUsers = async (): Promise<User[]> => {
-    const response = await fetch(`${API_URL}/users`);
+export const fetchUsers = async (status?: 'active' | 'deleted'): Promise<User[]> => {
+    const url = status ? `${API_URL}/users?status=${status}` : `${API_URL}/users`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch users');
     return response.json();
 };
@@ -67,6 +68,16 @@ export const deleteUser = async (id: number): Promise<void> => {
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to delete user');
+    }
+};
+
+export const restoreUser = async (id: number): Promise<void> => {
+    const response = await fetch(`${API_URL}/users/${id}/restore`, {
+        method: 'PUT',
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to restore user');
     }
 };
 

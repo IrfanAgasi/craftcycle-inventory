@@ -11,7 +11,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     try {
-        const [users] = await db.query<any[]>('SELECT * FROM users WHERE email = ?', [email]);
+        const [users] = await db.query<any[]>('SELECT * FROM users WHERE email = ? AND is_deleted = 0', [email]);
 
         console.log('--- Login Attempt ---');
         console.log('Email:', email);

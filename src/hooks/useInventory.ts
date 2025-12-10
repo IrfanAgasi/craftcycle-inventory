@@ -13,6 +13,7 @@ import {
     createUser,
     updateUser,
     deleteUser,
+    restoreUser,
     createKategori,
     updateKategori,
     deleteKategori
@@ -33,12 +34,12 @@ export const useDashboard = () => {
     });
 };
 
-export const useUsers = () => {
+export const useUsers = (status: 'active' | 'deleted' = 'active') => {
     const queryClient = useQueryClient();
 
     const usersQuery = useQuery({
-        queryKey: ['users'],
-        queryFn: fetchUsers,
+        queryKey: ['users', status],
+        queryFn: () => fetchUsers(status),
     });
 
     const createUserMutation = useMutation({
@@ -62,6 +63,13 @@ export const useUsers = () => {
         },
     });
 
+    const restoreUserMutation = useMutation({
+        mutationFn: restoreUser,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+        },
+    });
+
     return {
         users: usersQuery.data || [],
         isLoading: usersQuery.isLoading,
@@ -69,6 +77,7 @@ export const useUsers = () => {
         createUser: createUserMutation.mutateAsync,
         updateUser: updateUserMutation.mutateAsync,
         deleteUser: deleteUserMutation.mutateAsync,
+        restoreUser: restoreUserMutation.mutateAsync,
     };
 };
 
@@ -149,7 +158,7 @@ export const useKategori = () => {
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }: { id: number; data: Partial<KategoriBahan> }) => 
+        mutationFn: ({ id, data }: { id: number; data: Partial<KategoriBahan> }) =>
             updateKategori(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['kategori'] });
