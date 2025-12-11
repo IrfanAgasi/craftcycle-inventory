@@ -133,8 +133,8 @@ export default function Dashboard() {
           variant="pink"
         />
         <StatCard
-          title="Produksi Bulan Ini"
-          value={stats.produksiBulanIni}
+          title="Total Stok Produk"
+          value={stats.totalStokProduk}
           icon={Factory}
           variant="teal"
         />

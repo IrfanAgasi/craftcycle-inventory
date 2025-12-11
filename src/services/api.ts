@@ -1,4 +1,4 @@
-import { BahanSisa, KategoriBahan, RiwayatStok, User, BahanRusak} from '../types/database';
+import { BahanSisa, KategoriBahan, RiwayatStok, User, BahanRusak } from '../types/database';
 
 export interface RiwayatStokExtended extends RiwayatStok {
     nama_bahan: string;
@@ -13,23 +13,23 @@ export interface DashboardStats {
     totalProduk: number;
     stokMasukBulanIni: number;
     stokKeluarBulanIni: number;
-    produksiBulanIni: number;
+    totalStokProduk: number;
     rusakBulanIni: number;
     lowStockBahan: BahanSisa[];
 }
 
 export interface BahanRusakExtended {
-  rusak_id: number;
-  bahan_id: number;
-  jumlah: number;
-  alasan: string;
-  user_id: number;
-  tanggal_rusak: string;
-  nama_bahan: string;
-  warna: string;
-  berat_ukuran: string;
-  user_name: string;
-  user_role: string;
+    rusak_id: number;
+    bahan_id: number;
+    jumlah: number;
+    alasan: string;
+    user_id: number;
+    tanggal_rusak: string;
+    nama_bahan: string;
+    warna: string;
+    berat_ukuran: string;
+    user_name: string;
+    user_role: string;
 }
 
 const API_URL = 'http://localhost:3000/api';
@@ -41,6 +41,23 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
     }
     return response.json();
 };
+
+export const uploadProductImage = async (file: File): Promise<{ imageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch(`${API_URL}/upload/product-image`, {
+        method: 'POST',
+        body: formData,
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to upload image');
+    }
+
+    return response.json();
+};
+
 
 // --- User API ---
 
@@ -275,7 +292,7 @@ export const createProduk = async (data: {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
-        
+
         if (!response.ok) {
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {

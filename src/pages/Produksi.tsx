@@ -23,6 +23,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useInventory } from '@/hooks/useInventory';
 import { useProduk } from '@/hooks/useProduk';
+import { uploadProductImage } from '@/services/api';
 import type { ProdukJadi } from '@/types/database';
 
 interface ResepItem {
@@ -138,10 +139,18 @@ export default function ProduksiPage() {
     }
 
     try {
+      let imageUrl = '';
+
+      // Upload image first if exists
+      if (newProduk.gambar) {
+        const uploadResult = await uploadProductImage(newProduk.gambar);
+        imageUrl = `http://localhost:3000${uploadResult.imageUrl}`;
+      }
+
       await addProduk({
         nama_produk: newProduk.nama_produk,
         harga_jual: parseFloat(newProduk.harga_jual),
-        gambar_url: previewImage || undefined, // Send base64 image
+        gambar_url: imageUrl || undefined,
         resep: validResep
       });
 
@@ -288,10 +297,18 @@ export default function ProduksiPage() {
     }
 
     try {
+      let imageUrl = editPreviewImage; // Keep existing image URL
+
+      // Upload new image if file was changed
+      if (editProduk.gambar) {
+        const uploadResult = await uploadProductImage(editProduk.gambar);
+        imageUrl = `http://localhost:3000${uploadResult.imageUrl}`;
+      }
+
       await updateProduk(selectedProduk.produk_id, {
         nama_produk: editProduk.nama_produk,
         harga_jual: parseFloat(editProduk.harga_jual),
-        gambar_url: editPreviewImage || undefined,
+        gambar_url: imageUrl || undefined,
         resep: validResep
       });
 
@@ -370,7 +387,7 @@ export default function ProduksiPage() {
                 relative overflow-hidden rounded-2xl border-2 p-5
                 bg-gradient-to-br ${colorClass}
                 transition-all duration-300 hover:shadow-y2k hover:scale-[1.02] cursor-pointer
-              `}
+        `}
                 onClick={() => openDetail(produk)}
               >
                 {/* Decorative circle */}
@@ -391,12 +408,12 @@ export default function ProduksiPage() {
                             target.style.display = 'none';
                             if (target.parentElement) {
                               target.parentElement.innerHTML = `
-                              <div class="w-full h-full flex items-center justify-center bg-card/80">
-                                <svg class="w-16 h-16 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                </svg>
-                              </div>
-                            `;
+      < div class= "w-full h-full flex items-center justify-center bg-card/80" >
+      <svg class="w-16 h-16 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+      </svg>
+                              </div >
+    `;
                             }
                           }}
                         />
@@ -503,7 +520,7 @@ export default function ProduksiPage() {
                           className={`
                             flex items-center justify-between p-3 rounded-xl border-2
                             ${cukup ? 'bg-success/5 border-success/30' : 'bg-destructive/5 border-destructive/30'}
-                          `}
+  `}
                         >
                           <div className="flex items-center gap-3">
                             {cukup ? (

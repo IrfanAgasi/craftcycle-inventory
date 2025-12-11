@@ -17,10 +17,15 @@ import dashboardRoutes from './routes/dashboardRoutes';
 import userRoutes from './routes/userRoutes';
 import rusakRoutes from './routes/rusakRoutes';
 import produkRoutes from './routes/produkRoutes';
+import uploadRoutes from './routes/uploadRoutes';
+import path from 'path';
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Increase limit for base64 images
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Serve static files from public directory
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/kategori', kategoriRoutes);
@@ -31,6 +36,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api', rusakRoutes);
 app.use('/api/produk', produkRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', async (req, res) => {
