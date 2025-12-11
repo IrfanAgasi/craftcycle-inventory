@@ -33,13 +33,13 @@ const iconStyles = {
   danger: 'bg-destructive/20 text-destructive',
 };
 
-export function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  trend, 
+export function StatCard({
+  title,
+  value,
+  icon: Icon,
+  trend,
   variant = 'default',
-  className 
+  className
 }: StatCardProps) {
   return (
     <div className={cn(
@@ -52,7 +52,9 @@ export function StatCard({
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold text-foreground font-space">{value}</p>
+          <p className="text-3xl font-bold text-foreground font-space">
+            {typeof value === 'number' ? Math.round(value) : value}
+          </p>
           {trend && (
             <p className={cn(
               "text-xs font-medium",
@@ -69,7 +71,7 @@ export function StatCard({
           <Icon className="w-6 h-6" />
         </div>
       </div>
-      
+
       {/* Decorative element */}
       <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-2xl" />
     </div>

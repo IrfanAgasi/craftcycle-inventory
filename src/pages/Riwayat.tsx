@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { History, Search, Filter, ArrowUpCircle, ArrowDownCircle, AlertCircle, Factory } from 'lucide-react';
+import { History, Search, Filter, ArrowUpCircle, ArrowDownCircle, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
 import { Y2KBadge } from '@/components/ui/y2k-badge';
@@ -19,14 +19,14 @@ const tipeIcons: Record<TipeRiwayat, React.ReactNode> = {
   masuk: <ArrowUpCircle className="w-4 h-4 text-success" />,
   keluar: <ArrowDownCircle className="w-4 h-4 text-y2k-orange" />,
   rusak: <AlertCircle className="w-4 h-4 text-destructive" />,
-  produksi: <Factory className="w-4 h-4 text-y2k-purple" />,
+  produksi: <ArrowDownCircle className="w-4 h-4 text-y2k-orange" />, // Backward compatibility
 };
 
-const tipeBadgeVariant: Record<TipeRiwayat, 'success' | 'warning' | 'danger' | 'lavender'> = {
+const tipeBadgeVariant: Record<TipeRiwayat, 'success' | 'warning' | 'danger'> = {
   masuk: 'success',
   keluar: 'warning',
   rusak: 'danger',
-  produksi: 'lavender',
+  produksi: 'warning', // Backward compatibility - display as Keluar
 };
 
 export default function RiwayatPage() {
@@ -143,14 +143,17 @@ export default function RiwayatPage() {
     {
       key: 'tipe',
       header: renderHeader('Tipe', 'tipe'),
-      render: (item: RiwayatStokExtended) => (
-        <div className="flex items-center gap-2">
-          {tipeIcons[item.tipe]}
-          <Y2KBadge variant={tipeBadgeVariant[item.tipe]}>
-            {item.tipe.charAt(0).toUpperCase() + item.tipe.slice(1)}
-          </Y2KBadge>
-        </div>
-      )
+      render: (item: RiwayatStokExtended) => {
+        const displayText = item.tipe === 'produksi' ? 'Keluar' : item.tipe.charAt(0).toUpperCase() + item.tipe.slice(1);
+        return (
+          <div className="flex items-center gap-2">
+            {tipeIcons[item.tipe]}
+            <Y2KBadge variant={tipeBadgeVariant[item.tipe]}>
+              {displayText}
+            </Y2KBadge>
+          </div>
+        );
+      }
     },
     {
       key: 'bahan',
