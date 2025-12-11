@@ -53,7 +53,12 @@ export function StatCard({
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
           <p className="text-3xl font-bold text-foreground font-space">
-            {typeof value === 'number' ? Math.round(value) : value}
+            {typeof value === 'number'
+              ? Math.round(value)
+              : !isNaN(parseFloat(value as string))
+                ? Math.round(parseFloat(value as string))
+                : value
+            }
           </p>
           {trend && (
             <p className={cn(

@@ -13,8 +13,13 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             db.query('SELECT SUM(jumlah) as total FROM riwayat_stok WHERE tipe="masuk" AND MONTH(tanggal) = ?', [currentMonth]),
             // Stok Keluar Bulan Ini
             db.query('SELECT SUM(jumlah) as total FROM riwayat_stok WHERE tipe="keluar" AND MONTH(tanggal) = ?', [currentMonth]),
-            // Produksi Bulan Ini
-            db.query('SELECT COUNT(*) as count FROM riwayat_stok WHERE tipe="produksi" AND MONTH(tanggal) = ?', [currentMonth]),
+            // Produksi Bulan Ini - fetch all production records for JS processing
+            db.query(`
+                SELECT keterangan, tanggal
+                FROM riwayat_stok 
+                WHERE (tipe="produksi" OR (tipe="keluar" AND keterangan LIKE "Produksi%")) 
+                AND MONTH(tanggal) = ?
+            `, [currentMonth]),
             // Bahan Rusak Bulan Ini (Note: using riwayat_stok for consistency if that's where we log it, but schema has bahan_rusak table. Let's check logic)
             // Actually, in StokKeluar we log 'rusak' into riwayat_stok? Let's check StokKeluar logic.
             // Wait, in StokKeluar check: `INSERT INTO riwayat_stok ... tipe='keluar'`. 
@@ -49,13 +54,31 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         const [rusakRows] = results[6] as any;
         const [lowStockRows] = results[7] as any;
 
+        // Process produksi count - extract unique events and sum quantities
+        const uniqueProductions = new Set<string>();
+        let totalProduksi = 0;
+
+        produksiRows.forEach((row: any) => {
+            const timestamp = new Date(row.tanggal).toISOString();
+            const key = `${timestamp}-${row.keterangan}`;
+
+            if (!uniqueProductions.has(key)) {
+                uniqueProductions.add(key);
+
+                // Extract quantity from keterangan "Produksi 5x Product Name"
+                const match = row.keterangan.match(/Produksi (\d+)x/);
+                const quantity = match ? parseInt(match[1]) : 1;
+                totalProduksi += quantity;
+            }
+        });
+
         const stats = {
             totalBahan: bahanRows[0].count,
             totalKategori: kategoriRows[0].count,
             totalProduk: produkRows[0].count,
             stokMasukBulanIni: masukRows[0].total || 0,
             stokKeluarBulanIni: keluarRows[0].total || 0,
-            produksiBulanIni: produksiRows[0].count,
+            produksiBulanIni: totalProduksi,
             rusakBulanIni: Math.floor(rusakRows[0].total || 0),
             lowStockBahan: lowStockRows
         };

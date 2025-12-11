@@ -225,7 +225,7 @@ export const produksiProduk = async (req: Request, res: Response) => {
             // Record in riwayat_stok
             await connection.query(
                 'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan) VALUES (?, ?, ?, ?, ?)',
-                [item.bahan_id, 'keluar', neededAmount, user_id, `Produksi ${produk.nama_produk}`]
+                [item.bahan_id, 'keluar', neededAmount, user_id, `Produksi ${jumlah}x ${produk.nama_produk}`]
             );
         }
 
