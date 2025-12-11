@@ -529,8 +529,9 @@ export default function ProduksiPage() {
                               <X className="w-5 h-5 text-destructive" />
                             )}
                             <div>
-                              <p className="font-medium">{bahan?.nama_bahan}</p>
-                              <p className="text-sm text-muted-foreground">{bahan?.warna}</p>
+                              <p className="font-medium">
+                                {bahan?.nama_bahan} <span className="text-muted-foreground font-normal">- {bahan?.warna} ({bahan?.berat_ukuran})</span>
+                              </p>
                             </div>
                           </div>
                           <div className="text-right">
@@ -680,7 +681,7 @@ export default function ProduksiPage() {
                         <SelectContent>
                           {bahanList.map((bahan) => (
                             <SelectItem key={bahan.bahan_id} value={bahan.bahan_id.toString()}>
-                              {bahan.nama_bahan} - {bahan.warna}
+                              {bahan.nama_bahan} <span className="text-muted-foreground">- {bahan.warna} ({bahan.berat_ukuran})</span>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -837,7 +838,7 @@ export default function ProduksiPage() {
                         <SelectContent>
                           {bahanList.map((bahan) => (
                             <SelectItem key={bahan.bahan_id} value={bahan.bahan_id.toString()}>
-                              {bahan.nama_bahan} - {bahan.warna}
+                              {bahan.nama_bahan} <span className="text-muted-foreground">- {bahan.warna} ({bahan.berat_ukuran})</span>
                             </SelectItem>
                           ))}
                         </SelectContent>

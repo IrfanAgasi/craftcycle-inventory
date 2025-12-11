@@ -262,15 +262,6 @@ export default function BahanSisaPage() {
     },
     { key: 'berat_ukuran', header: renderHeader('Ukuran', 'berat_ukuran') },
     { key: 'warna', header: renderHeader('Warna', 'warna') },
-    // {
-    //   key: 'kondisi',
-    //   header: 'Kondisi',
-    //   render: (item: BahanSisa) => {
-    //     const variant = item.kondisi === 'siap-olah' ? 'success' :
-    //       item.kondisi === 'mentah' ? 'warning' : 'danger';
-    //     return <Y2KBadge variant={variant}>{item.kondisi}</Y2KBadge>;
-    //   }
-    // },
     {
       key: 'stok_total',
       header: renderHeader('Stok', 'stok_total'),
@@ -373,17 +364,6 @@ export default function BahanSisaPage() {
             ))}
           </SelectContent>
         </Select>
-        {/* <Select value={filterKondisi} onValueChange={setFilterKondisi}>
-          <SelectTrigger className="w-full sm:w-40 rounded-xl border-2">
-            <SelectValue placeholder="Kondisi" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Kondisi</SelectItem>
-            <SelectItem value="mentah">Mentah</SelectItem>
-            <SelectItem value="siap-olah">Siap Olah</SelectItem>
-            <SelectItem value="rusak">Rusak</SelectItem>
-          </SelectContent>
-        </Select> */}
       </div>
 
       <DataTable data={filteredBahan} columns={columns} />
