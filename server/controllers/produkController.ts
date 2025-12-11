@@ -18,10 +18,10 @@ export const getProdukById = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         const [produkRows] = await db.query<RowDataPacket[]>(
-            'SELECT * FROM produk_jadi WHERE produk_id = ?', 
+            'SELECT * FROM produk_jadi WHERE produk_id = ?',
             [id]
         );
-        
+
         if (produkRows.length === 0) {
             return res.status(404).json({ message: 'Produk not found' });
         }
@@ -91,29 +91,52 @@ export const createProduk = async (req: Request, res: Response) => {
 // Update produk
 export const updateProduk = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { nama_produk, harga_jual, gambar_url, stok_total } = req.body;
+    const { nama_produk, harga_jual, gambar_url, resep } = req.body;
 
+    const connection = await db.getConnection();
     try {
-        const [result] = await db.query<ResultSetHeader>(
-            'UPDATE produk_jadi SET nama_produk = ?, harga_jual = ?, gambar_url = ?, stok_total = ? WHERE produk_id = ?',
-            [nama_produk, harga_jual, gambar_url, stok_total, id]
+        await connection.beginTransaction();
+
+        // Update produk basic info
+        const [result] = await connection.query<ResultSetHeader>(
+            'UPDATE produk_jadi SET nama_produk = ?, harga_jual = ?, gambar_url = ? WHERE produk_id = ?',
+            [nama_produk, harga_jual, gambar_url || null, id]
         );
 
         if (result.affectedRows === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: 'Produk not found' });
         }
 
+        // Update resep if provided
+        if (resep && Array.isArray(resep)) {
+            // Delete existing resep
+            await connection.query('DELETE FROM resep_produk WHERE produk_id = ?', [id]);
+
+            // Insert new resep
+            for (const item of resep) {
+                await connection.query(
+                    'INSERT INTO resep_produk (produk_id, bahan_id, jumlah_bahan) VALUES (?, ?, ?)',
+                    [id, item.bahan_id, item.jumlah_bahan]
+                );
+            }
+        }
+
+        await connection.commit();
         res.json({ message: 'Produk updated successfully' });
     } catch (error) {
+        await connection.rollback();
         console.error('Error updating produk:', error);
         res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+        connection.release();
     }
 };
 
 // Delete produk
 export const deleteProduk = async (req: Request, res: Response) => {
     const { id } = req.params;
-    
+
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
@@ -123,7 +146,7 @@ export const deleteProduk = async (req: Request, res: Response) => {
 
         // Delete produk
         const [result] = await connection.query<ResultSetHeader>(
-            'DELETE FROM produk_jadi WHERE produk_id = ?', 
+            'DELETE FROM produk_jadi WHERE produk_id = ?',
             [id]
         );
 
@@ -192,7 +215,7 @@ export const produksiProduk = async (req: Request, res: Response) => {
         // Reduce bahan stock and record history
         for (const item of resepRows) {
             const neededAmount = item.jumlah_bahan * jumlah;
-            
+
             // Update bahan stock
             await connection.query(
                 'UPDATE bahan_sisa SET stok_total = stok_total - ? WHERE bahan_id = ?',

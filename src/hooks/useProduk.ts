@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchProduk, fetchResep, createProduk, produksiProduk } from '@/services/api';
+import { fetchProduk, fetchResep, createProduk, produksiProduk, deleteProduk as deleteProdukAPI, updateProduk as updateProdukAPI } from '@/services/api';
 import type { ProdukJadi, ResepProduk } from '@/types/database';
 
 export const useProduk = () => {
@@ -46,9 +46,26 @@ export const useProduk = () => {
         await loadResep();
     };
 
+    const updateProduk = async (produkId: number, data: {
+        nama_produk: string;
+        harga_jual: number;
+        gambar_url?: string;
+        resep: { bahan_id: number; jumlah_bahan: number }[];
+    }) => {
+        await updateProdukAPI(produkId, data);
+        await loadProduk();
+        await loadResep();
+    };
+
     const produksi = async (produkId: number, userId: number, jumlah: number = 1) => {
         await produksiProduk(produkId, userId, jumlah);
         await loadProduk();
+    };
+
+    const deleteProduk = async (produkId: number) => {
+        await deleteProdukAPI(produkId);
+        await loadProduk();
+        await loadResep();
     };
 
     const getResepByProdukId = (produkId: number) => {
@@ -61,7 +78,9 @@ export const useProduk = () => {
         loading,
         error,
         addProduk,
+        updateProduk,
         produksi,
+        deleteProduk,
         getResepByProdukId,
         reload: loadProduk
     };
