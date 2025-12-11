@@ -244,3 +244,93 @@ export const fetchBahanRusak = async (): Promise<BahanRusakExtended[]> => {
     }
     return response.json();
 };
+
+// --- Produk Jadi API ---
+
+export const fetchProduk = async () => {
+    const response = await fetch(`${API_URL}/produk`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch produk');
+    }
+    return response.json();
+};
+
+export const fetchProdukById = async (id: number) => {
+    const response = await fetch(`${API_URL}/produk/${id}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch produk');
+    }
+    return response.json();
+};
+
+export const createProduk = async (data: {
+    nama_produk: string;
+    harga_jual: number;
+    gambar_url?: string;
+    resep: { bahan_id: number; jumlah_bahan: number }[];
+}) => {
+    try {
+        const response = await fetch(`${API_URL}/produk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to create produk');
+            } else {
+                const text = await response.text();
+                console.error('Server response:', text);
+                throw new Error(`Server error: ${response.status}`);
+            }
+        }
+        return response.json();
+    } catch (error) {
+        console.error('Error creating produk:', error);
+        throw error;
+    }
+};
+
+export const updateProduk = async (id: number, data: any) => {
+    const response = await fetch(`${API_URL}/produk/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+        throw new Error('Failed to update produk');
+    }
+};
+
+export const deleteProduk = async (id: number) => {
+    const response = await fetch(`${API_URL}/produk/${id}`, {
+        method: 'DELETE',
+    });
+    if (!response.ok) {
+        throw new Error('Failed to delete produk');
+    }
+};
+
+export const produksiProduk = async (id: number, user_id: number, jumlah: number = 1) => {
+    const response = await fetch(`${API_URL}/produk/${id}/produksi`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id, jumlah }),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to produksi');
+    }
+    return response.json();
+};
+
+export const fetchResep = async () => {
+    const response = await fetch(`${API_URL}/produk/resep`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch resep');
+    }
+    return response.json();
+};

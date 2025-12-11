@@ -79,6 +79,7 @@ export interface ProdukJadi {
   nama_produk: string;
   harga_jual: number;
   stok_total: number;
+  gambar_url?: string;
   created_at: string;
   updated_at: string;
 }
