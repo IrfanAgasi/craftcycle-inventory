@@ -43,11 +43,26 @@ export const createInventory = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    // Normalize text fields: trim and remove extra spaces
+    const normalizedNamaBahan = nama_bahan.trim().replace(/\s+/g, ' ');
+    const normalizedWarna = warna.trim().toLowerCase().replace(/\s+/g, ' ');
+    // For berat_ukuran: 
+    // 1. Remove all spaces first
+    // 2. Add space between number/x and unit (30cm → 30 cm, 20x20cm → 20x20 cm)
+    const cleanUkuran = berat_ukuran.trim().replace(/\s+/g, '').toLowerCase();
+    // Add space before unit - order from longest to shortest to avoid partial matches (cm before m)
+    const normalizedBeratUkuran = cleanUkuran.replace(/(\d)(meter|liter|lembar|gram|inch|buah|cm|mm|kg|ml|pcs|m|g|l)/gi, '$1 $2');
+
     try {
-        // Check if bahan with same nama_bahan + warna + berat_ukuran already exists
+        // Check if bahan with same normalized nama_bahan + warna + berat_ukuran already exists
+        // Compare by removing all spaces and lowercasing both sides
+        const compareNamaBahan = normalizedNamaBahan.replace(/\s+/g, '').toLowerCase();
+        const compareWarna = normalizedWarna.replace(/\s+/g, '').toLowerCase();
+        const compareBeratUkuran = cleanUkuran; // Already no spaces and lowercase
+
         const [existingRows] = await db.query<RowDataPacket[]>(
-            'SELECT * FROM bahan_sisa WHERE nama_bahan = ? AND warna = ? AND berat_ukuran = ?',
-            [nama_bahan, warna, berat_ukuran]
+            'SELECT * FROM bahan_sisa WHERE LOWER(REPLACE(nama_bahan, " ", "")) = ? AND LOWER(REPLACE(warna, " ", "")) = ? AND LOWER(REPLACE(berat_ukuran, " ", "")) = ?',
+            [compareNamaBahan, compareWarna, compareBeratUkuran]
         );
 
         if (existingRows.length > 0) {
@@ -59,13 +74,13 @@ export const createInventory = async (req: Request, res: Response) => {
 
         const [result] = await db.query<ResultSetHeader>(
             'INSERT INTO bahan_sisa (nama_bahan, kategori_id, berat_ukuran, warna, stok_total) VALUES (?, ?, ?, ?, ?)',
-            [nama_bahan, kategori_id, berat_ukuran, warna, stok_total || 0]
+            [normalizedNamaBahan, kategori_id, normalizedBeratUkuran, normalizedWarna, stok_total || 0]
         );
 
         // If there's initial stock, record it in riwayat_stok
         if (stok_total > 0) {
             const user_id = req.body.user_id || 1; // Get user_id from request or default to 1
-            const namaBahanCache = `${nama_bahan} - ${warna} (${berat_ukuran})`;
+            const namaBahanCache = `${normalizedNamaBahan} - ${normalizedWarna} (${normalizedBeratUkuran})`;
             await db.query(
                 'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, tanggal, nama_bahan_cache) VALUES (?, ?, ?, ?, ?, NOW(), ?)',
                 [result.insertId, 'masuk', stok_total, user_id, 'Stok awal saat menambah bahan baru', namaBahanCache]
