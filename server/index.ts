@@ -18,6 +18,7 @@ import userRoutes from './routes/userRoutes';
 import rusakRoutes from './routes/rusakRoutes';
 import produkRoutes from './routes/produkRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
 import path from 'path';
 
 app.use(cors());
@@ -37,6 +38,7 @@ app.use('/api/users', userRoutes);
 app.use('/api', rusakRoutes);
 app.use('/api/produk', produkRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', async (req, res) => {

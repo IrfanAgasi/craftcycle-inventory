@@ -356,3 +356,29 @@ export const fetchResep = async () => {
     }
     return response.json();
 };
+
+// --- Analytics API ---
+
+export const fetchMonthlyTrends = async () => {
+    const response = await fetch(`${API_URL}/analytics/trends`);
+    if (!response.ok) throw new Error('Failed to fetch trends');
+    return response.json();
+};
+
+export const fetchTopMaterials = async () => {
+    const response = await fetch(`${API_URL}/analytics/top-materials`);
+    if (!response.ok) throw new Error('Failed to fetch top materials');
+    return response.json();
+};
+
+export const fetchCategoryDistribution = async () => {
+    const response = await fetch(`${API_URL}/analytics/categories`);
+    if (!response.ok) throw new Error('Failed to fetch category distribution');
+    return response.json();
+};
+
+export const fetchUserPerformance = async () => {
+    const response = await fetch(`${API_URL}/analytics/performance`);
+    if (!response.ok) throw new Error('Failed to fetch user performance');
+    return response.json();
+};

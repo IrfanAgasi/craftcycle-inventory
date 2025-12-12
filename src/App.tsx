@@ -18,6 +18,8 @@ import BahanRusakPage from "./pages/BahanRusakPage";
 import Kategori from "./pages/Kategori";
 import Users from "./pages/Users";
 import NotFound from "./pages/NotFound";
+import Laporan from "./pages/Laporan";
+import AuditUser from "./pages/AuditUser";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +33,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
-            
+
             {/* Protected Routes */}
             <Route element={<MainLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
@@ -43,8 +45,10 @@ const App = () => (
               <Route path="/rusak" element={<BahanRusakPage />} />
               <Route path="/kategori" element={<Kategori />} />
               <Route path="/users" element={<Users />} />
+              <Route path="/laporan" element={<Laporan />} />
+              <Route path="/audit" element={<AuditUser />} />
             </Route>
-            
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

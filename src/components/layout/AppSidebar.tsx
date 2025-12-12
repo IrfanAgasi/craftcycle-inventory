@@ -8,7 +8,9 @@ import {
   AlertTriangle,
   Users,
   FolderOpen,
-  LogOut
+  LogOut,
+  PieChart,
+  ClipboardCheck
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/context/AuthContext';
@@ -69,6 +71,18 @@ const menuItems = [
     icon: Users,
     roles: ['admin'] as const
   },
+  {
+    title: 'Laporan',
+    url: '/laporan',
+    icon: PieChart,
+    roles: ['manager'] as const
+  },
+  {
+    title: 'Audit User',
+    url: '/audit',
+    icon: ClipboardCheck,
+    roles: ['manager'] as const
+  },
 ];
 
 export function AppSidebar() {
@@ -77,7 +91,7 @@ export function AppSidebar() {
   const filteredMenu = menuItems.filter(item => hasRole([...item.roles]));
 
   return (
-    <aside className="w-64 min-h-screen bg-card/90 backdrop-blur-xl border-r-2 border-border/50 flex flex-col">
+    <aside className="w-64 h-full bg-card/90 backdrop-blur-xl border-r-2 border-border/50 flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-border/50">
         <div className="flex items-center gap-3">
@@ -102,7 +116,7 @@ export function AppSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {filteredMenu.map((item) => (
           <NavLink
             key={item.url}
