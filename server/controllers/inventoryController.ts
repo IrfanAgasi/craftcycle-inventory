@@ -43,8 +43,16 @@ export const createInventory = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    // Helper function to convert to Title Case
+    const toTitleCase = (str: string) => {
+        return str.trim().replace(/\s+/g, ' ').toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    };
+
     // Normalize text fields: trim and remove extra spaces
-    const normalizedNamaBahan = nama_bahan.trim().replace(/\s+/g, ' ');
+    const normalizedNamaBahan = toTitleCase(nama_bahan); // Title Case: kain perca → Kain Perca
     const normalizedWarna = warna.trim().toLowerCase().replace(/\s+/g, ' ');
     // For berat_ukuran: 
     // 1. Remove all spaces first
