@@ -350,7 +350,7 @@ export default function ProduksiPage() {
           description="Produksi kerajinan dari bahan sisa"
           icon={Sparkles}
         />
-        {hasRole(['admin']) && (
+        {hasRole(['admin', 'manager']) && (
           <Button
             onClick={() => setIsAddDialogOpen(true)}
             className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90 rounded-xl"
@@ -460,7 +460,7 @@ export default function ProduksiPage() {
                     </div>
                     {selectedProduk.nama_produk}
                   </DialogTitle>
-                  {hasRole(['admin']) && (
+                  {hasRole(['admin', 'manager']) && (
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
@@ -471,7 +471,7 @@ export default function ProduksiPage() {
                       >
                         <Pencil className="w-5 h-5" />
                       </Button>
-                      {hasRole(['admin']) && (
+                      {hasRole(['admin', 'manager']) && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -563,7 +563,7 @@ export default function ProduksiPage() {
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
                     Tutup
                   </Button>
-                  {hasRole(['admin', 'staff']) && (
+                  {hasRole(['admin', 'manager', 'staff']) && (
                     <Button
                       onClick={handleProduksi}
                       disabled={!checkStokCukup(selectedProduk.produk_id, jumlahProduksi)}
