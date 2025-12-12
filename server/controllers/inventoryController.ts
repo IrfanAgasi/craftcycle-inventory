@@ -85,10 +85,18 @@ export const createInventory = async (req: Request, res: Response) => {
             [normalizedNamaBahan, kategori_id, normalizedBeratUkuran, normalizedWarna, stok_total || 0]
         );
 
-        // If there's initial stock, record it in riwayat_stok
+        // If there's initial stock, record it in stok_masuk and riwayat_stok
         if (stok_total > 0) {
             const user_id = req.body.user_id || 1; // Get user_id from request or default to 1
             const namaBahanCache = `${normalizedNamaBahan} - ${normalizedWarna} (${normalizedBeratUkuran})`;
+
+            // Insert to stok_masuk table
+            await db.query(
+                'INSERT INTO stok_masuk (bahan_id, jumlah, user_id, tanggal_masuk) VALUES (?, ?, ?, NOW())',
+                [result.insertId, stok_total, user_id]
+            );
+
+            // Insert to riwayat_stok table
             await db.query(
                 'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, tanggal, nama_bahan_cache) VALUES (?, ?, ?, ?, ?, NOW(), ?)',
                 [result.insertId, 'masuk', stok_total, user_id, 'Stok awal saat menambah bahan baru', namaBahanCache]
