@@ -3,21 +3,24 @@ import { db } from '../config/db';
 
 export const getDashboardStats = async (req: Request, res: Response) => {
     try {
-        const currentMonth = new Date().getMonth() + 1; // MySQL months are 1-indexed
+        const currentMonth = new Date().getMonth() + 1; 
 
         const queries = [
+            //total bahan sisa
             db.query('SELECT COUNT(*) as count FROM bahan_sisa'),
+            //total kategori
             db.query('SELECT COUNT(*) as count FROM kategori_bahan'),
+            //total produk jadi
             db.query('SELECT COUNT(*) as count FROM produk_jadi'),
-            // Stok Masuk Bulan Ini
+            //stok masuk bulan Ini
             db.query('SELECT SUM(jumlah) as total FROM riwayat_stok WHERE tipe="masuk" AND MONTH(tanggal) = ?', [currentMonth]),
-            // Stok Keluar Bulan Ini
+            //stok keluar bulan Ini
             db.query('SELECT SUM(jumlah) as total FROM riwayat_stok WHERE tipe="keluar" AND MONTH(tanggal) = ?', [currentMonth]),
-            // Total Stok Produk (sum all product stock)
+            //total stok produk (sum all product stock)
             db.query('SELECT SUM(stok_total) as total FROM produk_jadi'),
-            // Bahan Rusak Bulan Ini
+            //total bahan rusak bulan Ini
             db.query('SELECT SUM(jumlah) as total FROM bahan_rusak WHERE MONTH(tanggal_rusak) = ?', [currentMonth]),
-            // Low Stock
+            //low stock 
             db.query('SELECT * FROM bahan_sisa WHERE stok_total < 10')
         ];
 

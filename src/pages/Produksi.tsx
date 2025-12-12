@@ -64,7 +64,6 @@ export default function ProduksiPage() {
   const [editPreviewImage, setEditPreviewImage] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter products based on search query
   const filteredProdukList = produkList.filter(produk =>
     produk.nama_produk.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -90,10 +89,10 @@ export default function ProduksiPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 2MB)
+      //check file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
         toast({
-          title: "Error! ⚠️",
+          title: "Error!",
           description: "Ukuran gambar maksimal 2MB",
           variant: "destructive",
         });
@@ -126,7 +125,7 @@ export default function ProduksiPage() {
   const handleSubmitProdukBaru = async () => {
     if (!newProduk.nama_produk || !newProduk.harga_jual) {
       toast({
-        title: "Error! ⚠️",
+        title: "Error!",
         description: "Nama produk dan harga wajib diisi",
         variant: "destructive",
       });
@@ -136,7 +135,7 @@ export default function ProduksiPage() {
     const validResep = resepItems.filter(item => item.bahan_id > 0 && item.jumlah_bahan > 0);
     if (validResep.length === 0) {
       toast({
-        title: "Error! ⚠️",
+        title: "Error!",
         description: "Minimal satu resep harus ditambahkan",
         variant: "destructive",
       });
@@ -146,7 +145,7 @@ export default function ProduksiPage() {
     try {
       let imageUrl = '';
 
-      // Upload image first if exists
+      //upload gambar produk
       if (newProduk.gambar) {
         const uploadResult = await uploadProductImage(newProduk.gambar);
         imageUrl = `http://localhost:3000${uploadResult.imageUrl}`;
@@ -160,18 +159,17 @@ export default function ProduksiPage() {
       });
 
       toast({
-        title: "Produk Berhasil Ditambahkan! 🎉",
+        title: "Produk Berhasil Ditambahkan!",
         description: `${newProduk.nama_produk} berhasil ditambahkan`,
       });
 
-      // Reset form
       setNewProduk({ nama_produk: '', harga_jual: '', gambar: null });
       setResepItems([{ bahan_id: 0, jumlah_bahan: 0 }]);
       setPreviewImage('');
       setIsAddDialogOpen(false);
     } catch (error) {
       toast({
-        title: "Error! ⚠️",
+        title: "Error!",
         description: error instanceof Error ? error.message : 'Gagal menambahkan produk',
         variant: "destructive",
       });
@@ -183,7 +181,7 @@ export default function ProduksiPage() {
 
     if (!checkStokCukup(selectedProduk.produk_id, jumlahProduksi)) {
       toast({
-        title: "Stok Tidak Cukup! ⚠️",
+        title: "Stok Tidak Cukup!",
         description: "Beberapa bahan tidak mencukupi untuk produksi",
         variant: "destructive",
       });
@@ -194,14 +192,14 @@ export default function ProduksiPage() {
       await produksi(selectedProduk.produk_id, user.user_id, jumlahProduksi);
 
       toast({
-        title: "Produksi Berhasil! 🎉",
+        title: "Produksi Berhasil!",
         description: `${jumlahProduksi} unit ${selectedProduk.nama_produk} berhasil diproduksi`,
       });
 
       setIsDialogOpen(false);
     } catch (error) {
       toast({
-        title: "Error! ⚠️",
+        title: "Error!",
         description: error instanceof Error ? error.message : 'Gagal melakukan produksi',
         variant: "destructive",
       });
@@ -211,7 +209,6 @@ export default function ProduksiPage() {
   const handleDeleteProduk = async () => {
     if (!selectedProduk) return;
 
-    // Konfirmasi delete
     const confirmed = window.confirm(
       `Apakah Anda yakin ingin menghapus produk "${selectedProduk.nama_produk}"? Tindakan ini tidak dapat dibatalkan.`
     );
@@ -222,14 +219,14 @@ export default function ProduksiPage() {
       await deleteProduk(selectedProduk.produk_id);
 
       toast({
-        title: "Produk Berhasil Dihapus! 🗑️",
+        title: "Produk Berhasil Dihapus!",
         description: `${selectedProduk.nama_produk} telah dihapus`,
       });
 
       setIsDialogOpen(false);
     } catch (error) {
       toast({
-        title: "Error! ⚠️",
+        title: "Error!",
         description: error instanceof Error ? error.message : 'Gagal menghapus produk',
         variant: "destructive",
       });
@@ -239,7 +236,6 @@ export default function ProduksiPage() {
   const openEditDialog = () => {
     if (!selectedProduk) return;
 
-    // Load current data into edit state
     setEditProduk({
       nama_produk: selectedProduk.nama_produk,
       harga_jual: Math.round(selectedProduk.harga_jual).toString(),
@@ -247,7 +243,6 @@ export default function ProduksiPage() {
     });
     setEditPreviewImage(selectedProduk.gambar_url || '');
 
-    // Load current resep
     const currentResep = getResepByProdukId(selectedProduk.produk_id);
     setEditResepItems(currentResep.map(r => ({
       bahan_id: r.bahan_id,
@@ -263,7 +258,7 @@ export default function ProduksiPage() {
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
         toast({
-          title: "Error! ⚠️",
+          title: "Error!",
           description: "Ukuran gambar maksimal 2MB",
           variant: "destructive",
         });
@@ -284,7 +279,7 @@ export default function ProduksiPage() {
 
     if (!editProduk.nama_produk || !editProduk.harga_jual) {
       toast({
-        title: "Error! ⚠️",
+        title: "Error!",
         description: "Nama produk dan harga wajib diisi",
         variant: "destructive",
       });
@@ -294,7 +289,7 @@ export default function ProduksiPage() {
     const validResep = editResepItems.filter(item => item.bahan_id > 0 && item.jumlah_bahan > 0);
     if (validResep.length === 0) {
       toast({
-        title: "Error! ⚠️",
+        title: "Error!",
         description: "Minimal satu resep harus ditambahkan",
         variant: "destructive",
       });
@@ -317,14 +312,14 @@ export default function ProduksiPage() {
       });
 
       toast({
-        title: "Produk Berhasil Diupdate! 🎉",
+        title: "Produk Berhasil Diupdate!",
         description: `${editProduk.nama_produk} berhasil diperbarui`,
       });
 
       setIsEditDialogOpen(false);
     } catch (error) {
       toast({
-        title: "Error! ⚠️",
+        title: "Error!",
         description: error instanceof Error ? error.message : 'Gagal mengupdate produk',
         variant: "destructive",
       });
@@ -389,7 +384,6 @@ export default function ProduksiPage() {
             const stokCukup = checkStokCukup(produk.produk_id);
             const colorClass = cardColors[index % cardColors.length];
 
-            // Debug: Log gambar_url
             if (index === 0) {
               console.log('Produk gambar_url:', produk.gambar_url ? 'exists' : 'empty', produk.gambar_url?.substring(0, 50));
             }
@@ -418,7 +412,6 @@ export default function ProduksiPage() {
                           alt={produk.nama_produk}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            // Fallback to icon if image fails to load
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
                             if (target.parentElement) {

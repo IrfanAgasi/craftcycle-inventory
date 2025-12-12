@@ -32,13 +32,9 @@ export default function StokMasukPage() {
   });
 
   const [selectedNamaBahan, setSelectedNamaBahan] = useState<string>('');
-
-  // Derived state for selection
   const uniqueNamaBahan = Array.from(new Set(bahanList.map(b => b.nama_bahan))).sort();
-
   const filteredBahanList = bahanList.filter(b => b.nama_bahan === selectedNamaBahan);
 
-  // Auto-select nama bahan if editing/preselected
   if (preselectedBahan && !selectedNamaBahan && bahanList.length > 0) {
     const bahan = bahanList.find(b => b.bahan_id.toString() === preselectedBahan);
     if (bahan) {
@@ -88,7 +84,6 @@ export default function StokMasukPage() {
       });
 
       setFormData({ bahan_id: '', jumlah: '', keterangan: '' });
-      // Optional: navigate back or stay
     } catch (error) {
       toast({
         title: "Error",
@@ -111,7 +106,6 @@ export default function StokMasukPage() {
           <div className="space-y-2">
             <Label>Pilih Bahan</Label>
 
-            {/* Step 1: Pilih Nama Bahan */}
             <div className="space-y-2">
               <Select
                 value={selectedNamaBahan}
@@ -133,7 +127,6 @@ export default function StokMasukPage() {
               </Select>
             </div>
 
-            {/* Step 2: Pilih Warna/Varian */}
             {selectedNamaBahan && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                 <Select

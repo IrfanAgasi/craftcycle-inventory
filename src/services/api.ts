@@ -174,7 +174,6 @@ export const createBahan = async (data: Omit<BahanSisa, 'bahan_id' | 'created_at
         }
         throw new Error(errorData.message || errorData.error || 'Failed to create item');
     }
-
     return JSON.parse(responseText);
 };
 

@@ -65,7 +65,6 @@ export const deleteKategori = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
-        // Check if kategori is being used
         const [bahanRows] = await db.query<any[]>(
             'SELECT COUNT(*) as count FROM bahan_sisa WHERE kategori_id = ?',
             [id]

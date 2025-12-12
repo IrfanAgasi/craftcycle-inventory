@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { User, UserRole } from '@/types/database';
-// import { users } from '@/data/mockData'; // No longer needed
 import { loginUser } from '@/services/api';
 
 interface AuthContextType {

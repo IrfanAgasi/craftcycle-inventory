@@ -19,14 +19,12 @@ const tipeIcons: Record<TipeRiwayat, React.ReactNode> = {
   masuk: <ArrowUpCircle className="w-4 h-4 text-success" />,
   keluar: <ArrowDownCircle className="w-4 h-4 text-y2k-orange" />,
   rusak: <AlertCircle className="w-4 h-4 text-destructive" />,
-  produksi: <ArrowDownCircle className="w-4 h-4 text-y2k-orange" />, // Backward compatibility
 };
 
 const tipeBadgeVariant: Record<TipeRiwayat, 'success' | 'warning' | 'danger'> = {
   masuk: 'success',
   keluar: 'warning',
   rusak: 'danger',
-  produksi: 'warning', // Backward compatibility - display as Keluar
 };
 
 export default function RiwayatPage() {
@@ -39,7 +37,6 @@ export default function RiwayatPage() {
   });
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'tanggal', direction: 'desc' });
 
-  /* ... handleSort ... */
   const handleSort = (key: string) => {
     setSortConfig(current => {
       if (current?.key === key) {
@@ -62,11 +59,10 @@ export default function RiwayatPage() {
 
     const matchTipe = filterTipe === 'all' || r.tipe === filterTipe;
 
-    // Date Filtering
+    //date filtering
     let matchDate = true;
     if (dateRange.from || dateRange.to) {
       const itemDate = new Date(r.tanggal);
-      // Reset time part for accurate date comparison
       const checkDate = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate()).getTime();
 
       const fromDate = dateRange.from ? new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate()).getTime() : null;
@@ -78,7 +74,6 @@ export default function RiwayatPage() {
 
     return matchSearch && matchTipe && matchDate;
   }).sort((a, b) => {
-    /* ... sorting logic ... */
     if (!sortConfig) return 0;
     const { key, direction } = sortConfig;
     let aValue: any = (a as any)[key];
@@ -105,7 +100,6 @@ export default function RiwayatPage() {
     return 0;
   });
 
-  /* ... SortIcon and renderHeader ... */
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
     if (sortConfig?.key !== columnKey) return <ArrowUpCircle className="w-4 h-4 text-muted-foreground/30" />;
     return sortConfig.direction === 'asc'
@@ -123,7 +117,6 @@ export default function RiwayatPage() {
     </div>
   );
 
-  /* ... columns ... */
   const columns = [
     {
       key: 'tanggal',
@@ -144,7 +137,7 @@ export default function RiwayatPage() {
       key: 'tipe',
       header: renderHeader('Tipe', 'tipe'),
       render: (item: RiwayatStokExtended) => {
-        const displayText = item.tipe === 'produksi' ? 'Keluar' : item.tipe.charAt(0).toUpperCase() + item.tipe.slice(1);
+        const displayText = item.tipe.charAt(0).toUpperCase() + item.tipe.slice(1);
         return (
           <div className="flex items-center gap-2">
             {tipeIcons[item.tipe]}

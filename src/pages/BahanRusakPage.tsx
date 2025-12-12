@@ -14,15 +14,6 @@ import {
 import { useBahanRusak } from '@/hooks/useInventory';
 import type { BahanRusakExtended } from '@/services/api';
 
-// export default function BahanRusakPage() {
-//   const [search, setSearch] = useState('');
-
-//   const filteredRusak = bahanRusakList.filter(r => {
-//     const bahan = getBahanById(r.bahan_id);
-//     return bahan?.nama_bahan.toLowerCase().includes(search.toLowerCase()) ||
-//            r.alasan.toLowerCase().includes(search.toLowerCase());
-//   }).sort((a, b) => new Date(b.tanggal_rusak).getTime() - new Date(a.tanggal_rusak).getTime());
-
 export default function BahanRusakPage() {
   const [search, setSearch] = useState('');
   const [filterBahan, setFilterBahan] = useState('all');
@@ -35,7 +26,7 @@ export default function BahanRusakPage() {
     direction: 'desc' 
   });
 
-  const { data: bahanRusakList = [], isLoading, isError } = useBahanRusak();
+  const { data: bahanRusakList = [] } = useBahanRusak();
   
   const handleSort = (key: string) => {
     setSortConfig(current => {
@@ -48,7 +39,7 @@ export default function BahanRusakPage() {
 
   const uniqueBahan = Array.from(new Set(bahanRusakList.map(r => r.nama_bahan))).sort();
 
-  // Filter and Sort
+  //filter and sort
   const filteredRusak = bahanRusakList.filter(r => {
     const searchLower = search.toLowerCase();
     const matchSearch = 
@@ -62,7 +53,7 @@ export default function BahanRusakPage() {
 
     const matchBahan = filterBahan === 'all' || r.nama_bahan === filterBahan;
 
-    // Date Filtering
+    //date filtering
     let matchDate = true;
     if (dateRange.from || dateRange.to) {
       const itemDate = new Date(r.tanggal_rusak);
@@ -103,7 +94,7 @@ export default function BahanRusakPage() {
     return 0;
   });
 
-  // Sort Icon Component
+  //sort icon component
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
     if (sortConfig?.key !== columnKey) return <ArrowUpCircle className="w-4 h-4 text-muted-foreground/30" />;
     return sortConfig.direction === 'asc'
@@ -111,7 +102,7 @@ export default function BahanRusakPage() {
       : <ArrowDownCircle className="w-4 h-4 text-primary" />;
   };
 
-  // Render Header with Sort
+  //renderHeader with sort
   const renderHeader = (label: string, key: string) => (
     <div
       className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors select-none"
@@ -185,10 +176,6 @@ export default function BahanRusakPage() {
   const totalRusak = Array.isArray(bahanRusakList) 
     ? bahanRusakList.reduce((sum, r) => sum + (Number(r.jumlah) || 0), 0)
     : 0;
-
-  // if (isLoading) {
-  //   return <div className="p-8 text-center">Loading...</div>;
-  // }
 
   return (
     <div className="space-y-6">

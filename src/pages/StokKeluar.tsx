@@ -32,17 +32,13 @@ export default function StokKeluarPage() {
     jumlah: '',
     alasan: '',
     keterangan: '',
-    produk_id: '', // New field for product selection
+    produk_id: '', 
   });
 
   const [selectedNamaBahan, setSelectedNamaBahan] = useState<string>('');
-
-  // Derived state for selection
   const uniqueNamaBahan = Array.from(new Set(bahanList.map(b => b.nama_bahan))).sort();
-
   const filteredBahanList = bahanList.filter(b => b.nama_bahan === selectedNamaBahan);
 
-  // Auto-select nama bahan if editing/preselected
   if (preselectedBahan && !selectedNamaBahan && bahanList.length > 0) {
     const bahan = bahanList.find(b => b.bahan_id.toString() === preselectedBahan);
     if (bahan) {
@@ -55,7 +51,6 @@ export default function StokKeluarPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validasi Field Wajib
     if (!formData.bahan_id || !formData.jumlah || !formData.alasan) {
       toast({
         title: "Error",
@@ -65,7 +60,6 @@ export default function StokKeluarPage() {
       return;
     }
 
-    // Validasi Tambahan Produksi
     if (formData.alasan === 'tambahan_produksi' && !formData.produk_id) {
       toast({
         title: "Error",
@@ -75,7 +69,6 @@ export default function StokKeluarPage() {
       return;
     }
 
-    // Validasi Keterangan Wajib (Rusak & Lainnya)
     if ((formData.alasan === 'rusak' || formData.alasan === 'lainnya') && !formData.keterangan) {
       toast({
         title: "Error",
@@ -111,7 +104,6 @@ export default function StokKeluarPage() {
       if (formData.alasan === 'tambahan_produksi') {
         const produk = produkJadi.find(p => p.produk_id.toString() === formData.produk_id);
         const namaProduk = produk ? produk.nama_produk : 'Unknown';
-        // Only add colon if there's additional keterangan
         finalKeterangan = formData.keterangan.trim()
           ? `Tambahan Produksi (${namaProduk}): ${formData.keterangan}`
           : `Tambahan Produksi (${namaProduk})`;
@@ -119,7 +111,6 @@ export default function StokKeluarPage() {
       } else if (formData.alasan === 'lainnya') {
         finalKeterangan = `Lainnya: ${formData.keterangan}`;
       } else if (formData.alasan === 'rusak') {
-        // Rusak logic handled by backend usually marking field, but here we append to description too for safety
         finalKeterangan = `Rusak: ${formData.keterangan}`;
       }
 
@@ -127,13 +118,13 @@ export default function StokKeluarPage() {
         bahan_id: parseInt(formData.bahan_id),
         jumlah: jumlah,
         user_id: user.user_id,
-        keterangan: finalKeterangan // Send constructed string
+        keterangan: finalKeterangan 
       });
 
       const isRusak = formData.alasan === 'rusak';
 
       toast({
-        title: isRusak ? "Bahan Rusak Dicatat! ⚠️" : "Stok Keluar Berhasil! ✨",
+        title: isRusak ? "Bahan Rusak Dicatat!" : "Stok Keluar Berhasil!",
         description: `${formData.jumlah} unit ${selectedBahan?.nama_bahan} telah dikurangi (${displayAlasan})`,
       });
 
@@ -160,7 +151,6 @@ export default function StokKeluarPage() {
           <div className="space-y-2">
             <Label>Pilih Bahan</Label>
 
-            {/* Step 1: Pilih Nama Bahan */}
             <div className="space-y-2">
               <Select
                 value={selectedNamaBahan}
@@ -182,7 +172,6 @@ export default function StokKeluarPage() {
               </Select>
             </div>
 
-            {/* Step 2: Pilih Warna/Varian */}
             {selectedNamaBahan && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                 <Select

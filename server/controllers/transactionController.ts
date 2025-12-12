@@ -13,19 +13,14 @@ export const stokMasuk = async (req: Request, res: Response) => {
     try {
         await connection.beginTransaction();
 
-        // 1. Insert ke tabel stok_masuk
         await connection.query(
             'INSERT INTO stok_masuk (bahan_id, jumlah, user_id, tanggal_masuk) VALUES (?, ?, ?, NOW())',
             [bahan_id, jumlah, user_id]
         );
-
-        // 2. Update stok di tabel bahan_sisa
         await connection.query(
             'UPDATE bahan_sisa SET stok_total = stok_total + ? WHERE bahan_id = ?',
             [jumlah, bahan_id]
         );
-
-        // Get bahan info for cache
         const [bahanRows] = await connection.query<any[]>(
             'SELECT nama_bahan, warna, berat_ukuran FROM bahan_sisa WHERE bahan_id = ?',
             [bahan_id]
@@ -33,7 +28,6 @@ export const stokMasuk = async (req: Request, res: Response) => {
         const bahan = bahanRows[0];
         const namaBahanCache = bahan ? `${bahan.nama_bahan} - ${bahan.warna} (${bahan.berat_ukuran})` : null;
 
-        // 3. Catat di riwayat_stok
         await connection.query(
             'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, tanggal, nama_bahan_cache) VALUES (?, ?, ?, ?, ?, NOW(), ?)',
             [bahan_id, 'masuk', jumlah, user_id, keterangan || 'Stok Masuk', namaBahanCache]
@@ -61,7 +55,6 @@ export const stokKeluar = async (req: Request, res: Response) => {
     try {
         await connection.beginTransaction();
 
-        // Cek stok dulu
         const [rows] = await connection.query<any[]>(
             'SELECT stok_total, nama_bahan, warna, berat_ukuran FROM bahan_sisa WHERE bahan_id = ?',
             [bahan_id]
@@ -76,22 +69,16 @@ export const stokKeluar = async (req: Request, res: Response) => {
             return res.status(400).json({ message: `Stok tidak cukup. Sisa: ${stokSisa}` });
         }
 
-        // 1. Insert ke tabel stok_keluar
         await connection.query(
             'INSERT INTO stok_keluar (bahan_id, jumlah, user_id, tanggal_keluar) VALUES (?, ?, ?, NOW())',
             [bahan_id, jumlah, user_id]
         );
-
-        // 2. Update stok di tabel bahan_sisa
         await connection.query(
             'UPDATE bahan_sisa SET stok_total = stok_total - ? WHERE bahan_id = ?',
             [jumlah, bahan_id]
         );
-
-        // 3. Catat di riwayat_stok
         const tipe = (keterangan && keterangan.startsWith('Rusak')) ? 'rusak' : 'keluar';
 
-        // Cache nama bahan
         const namaBahanCache = `${rows[0].nama_bahan} - ${rows[0].warna} (${rows[0].berat_ukuran})`;
 
         await connection.query(
@@ -99,9 +86,7 @@ export const stokKeluar = async (req: Request, res: Response) => {
             [bahan_id, tipe, jumlah, user_id, keterangan || 'Stok Keluar', namaBahanCache]
         );
 
-        // 4. Jika Rusak, catat di bahan_rusak
         if (tipe === 'rusak') {
-            // Extract alasan ("Rusak: ...") -> clean description
             const cleanAlasan = keterangan ? keterangan.replace('Rusak: ', '') : 'Tidak ada keterangan';
 
             await connection.query(

@@ -5,8 +5,6 @@ import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export const getAllInventory = async (req: Request, res: Response) => {
     try {
-        // Get all bahan with their latest activity timestamp
-        // Order by latest riwayat_stok activity first, then by bahan_id for new items
         const [rows] = await db.query(`
             SELECT bs.*, 
                    MAX(rs.tanggal) as last_activity
@@ -43,7 +41,6 @@ export const createInventory = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // Helper function to convert to Title Case
     const toTitleCase = (str: string) => {
         return str.trim().replace(/\s+/g, ' ').toLowerCase()
             .split(' ')
@@ -51,22 +48,15 @@ export const createInventory = async (req: Request, res: Response) => {
             .join(' ');
     };
 
-    // Normalize text fields: trim and remove extra spaces
-    const normalizedNamaBahan = toTitleCase(nama_bahan); // Title Case: kain perca → Kain Perca
+    const normalizedNamaBahan = toTitleCase(nama_bahan); 
     const normalizedWarna = warna.trim().toLowerCase().replace(/\s+/g, ' ');
-    // For berat_ukuran: 
-    // 1. Remove all spaces first
-    // 2. Add space between number/x and unit (30cm → 30 cm, 20x20cm → 20x20 cm)
     const cleanUkuran = berat_ukuran.trim().replace(/\s+/g, '').toLowerCase();
-    // Add space before unit - order from longest to shortest to avoid partial matches (cm before m)
     const normalizedBeratUkuran = cleanUkuran.replace(/(\d)(meter|liter|lembar|gram|inch|buah|cm|mm|kg|ml|pcs|m|g|l)/gi, '$1 $2');
 
     try {
-        // Check if bahan with same normalized nama_bahan + warna + berat_ukuran already exists
-        // Compare by removing all spaces and lowercasing both sides
         const compareNamaBahan = normalizedNamaBahan.replace(/\s+/g, '').toLowerCase();
         const compareWarna = normalizedWarna.replace(/\s+/g, '').toLowerCase();
-        const compareBeratUkuran = cleanUkuran; // Already no spaces and lowercase
+        const compareBeratUkuran = cleanUkuran; 
 
         const [existingRows] = await db.query<RowDataPacket[]>(
             'SELECT * FROM bahan_sisa WHERE LOWER(REPLACE(nama_bahan, " ", "")) = ? AND LOWER(REPLACE(warna, " ", "")) = ? AND LOWER(REPLACE(berat_ukuran, " ", "")) = ?',
@@ -85,18 +75,14 @@ export const createInventory = async (req: Request, res: Response) => {
             [normalizedNamaBahan, kategori_id, normalizedBeratUkuran, normalizedWarna, stok_total || 0]
         );
 
-        // If there's initial stock, record it in stok_masuk and riwayat_stok
         if (stok_total > 0) {
-            const user_id = req.body.user_id || 1; // Get user_id from request or default to 1
+            const user_id = req.body.user_id || 1; 
             const namaBahanCache = `${normalizedNamaBahan} - ${normalizedWarna} (${normalizedBeratUkuran})`;
-
-            // Insert to stok_masuk table
             await db.query(
                 'INSERT INTO stok_masuk (bahan_id, jumlah, user_id, tanggal_masuk) VALUES (?, ?, ?, NOW())',
                 [result.insertId, stok_total, user_id]
             );
 
-            // Insert to riwayat_stok table
             await db.query(
                 'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, tanggal, nama_bahan_cache) VALUES (?, ?, ?, ?, ?, NOW(), ?)',
                 [result.insertId, 'masuk', stok_total, user_id, 'Stok awal saat menambah bahan baru', namaBahanCache]
@@ -140,7 +126,6 @@ export const deleteInventory = async (req: Request, res: Response) => {
     const { user_id } = req.body;
 
     try {
-        // Get bahan data before deleting  
         const [rows] = await db.query<RowDataPacket[]>(
             'SELECT * FROM bahan_sisa WHERE bahan_id = ?',
             [id]
@@ -152,7 +137,6 @@ export const deleteInventory = async (req: Request, res: Response) => {
 
         const bahan = rows[0];
 
-        // Step 1: Try to delete the bahan first (resep_produk CASCADE, others SET NULL)
         const [result] = await db.query<ResultSetHeader>(
             'DELETE FROM bahan_sisa WHERE bahan_id = ?',
             [id]
@@ -162,9 +146,7 @@ export const deleteInventory = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Item not found' });
         }
 
-        // Step 2: Record deletion to riwayat_stok ONLY if delete was successful
         if (bahan.stok_total > 0 && user_id) {
-            // Format: "Nama - warna (ukuran)" for complete info
             const cacheValue = `${bahan.nama_bahan} - ${bahan.warna} (${bahan.berat_ukuran})`;
             await db.query(
                 'INSERT INTO riwayat_stok (bahan_id, nama_bahan_cache, tipe, jumlah, user_id, keterangan, tanggal) VALUES (?, ?, ?, ?, ?, ?, NOW())',
@@ -179,8 +161,7 @@ export const deleteInventory = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('Error deleting item:', error);
-
-        // Check if error is foreign key constraint from resep_produk
+          
         if (error.code === 'ER_ROW_IS_REFERENCED_2' && error.sqlMessage?.includes('resep_produk')) {
             return res.status(400).json({
                 message: 'Bahan tidak bisa dihapus karena masih dibutuhkan untuk produksi',

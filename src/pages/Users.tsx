@@ -43,24 +43,6 @@ export default function UsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  /* ... handlers ... */
-  // Preserving handlers but ensuring I don't lose them.
-  // Actually, replace_file_content replaces a block. I need to be careful not to delete handlers if I replace `UsersPage` body.
-  // I will only replace the beginning of component to add state, and the return block to add tabs.
-  // Since I can't easily split edits, I will rewrite the component body logic and return statement mainly.
-
-  // Let's replace the top part first to add state.
-  // Then replace the return part.
-  // Wait, I can do it in two chunks? No, replace_file_content is single contiguous.
-  // I'll use multi_replace.
-
-  // Chunk 1: Add state status
-  // Chunk 2: Add Tabs in JSX
-
-  // Wait, current `useUsers` invocation is line 41: `const { users, ... } = useUsers();`
-  // I change it to `useUsers(status)`.
-
-
   const [formData, setFormData] = useState({
     nama: '',
     email: '',

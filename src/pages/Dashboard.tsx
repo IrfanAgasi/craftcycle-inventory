@@ -25,9 +25,6 @@ export default function Dashboard() {
   const { data: stats } = useDashboard();
   const { inventory: bahanList, kategori: kategoriList } = useInventory();
 
-  // Low stock alert from stats or calculate from inventory list? 
-  // Stats endpoint returns specific structure.
-
   const getKategoriName = (id: number) => {
     return kategoriList.find(k => k.kategori_id === id)?.nama_kategori;
   };
@@ -39,7 +36,6 @@ export default function Dashboard() {
 
   if (!stats) return <div className="p-8 text-center">Loading Dashboard...</div>;
 
-  // Table columns
   const columns = [
     {
       key: 'nama_bahan',
@@ -188,7 +184,7 @@ export default function Dashboard() {
             </Button>
           )}
         </div>
-        {/* Menampilkan 10 bahan dengan aktivitas terbaru (stok masuk/keluar/tambah bahan) */}
+
         <DataTable
           data={bahanList.slice(0, 10)}
           columns={columns}

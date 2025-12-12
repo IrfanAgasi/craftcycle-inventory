@@ -57,7 +57,7 @@ export interface BahanRusak {
   tanggal_rusak: string;
 }
 
-export type TipeRiwayat = 'masuk' | 'keluar' | 'rusak' | 'produksi';
+export type TipeRiwayat = 'masuk' | 'keluar' | 'rusak';
 
 export interface RiwayatStok {
   riwayat_id: number;

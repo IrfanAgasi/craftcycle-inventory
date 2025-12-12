@@ -24,7 +24,6 @@ export const login = async (req: Request, res: Response) => {
         const user = users[0];
         console.log('User found:', user.email);
 
-        // Hash password with MD5 to match database
         const hashedPassword = crypto.createHash('md5').update(password).digest('hex');
 
         console.log('Input Password:', password);
@@ -36,7 +35,6 @@ export const login = async (req: Request, res: Response) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Return user without password
         const { password: _, ...userWithoutPassword } = user;
 
         res.json({

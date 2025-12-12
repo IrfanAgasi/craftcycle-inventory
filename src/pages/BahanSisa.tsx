@@ -32,7 +32,7 @@ export default function BahanSisaPage() {
   const { hasRole, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { inventory: bahanList, kategori: kategoriList, isLoading, createBahan, updateBahan, deleteBahan } = useInventory();
+  const { inventory: bahanList, kategori: kategoriList, createBahan, updateBahan, deleteBahan } = useInventory();
 
   const [search, setSearch] = useState('');
   const [filterKategori, setFilterKategori] = useState('all');
@@ -57,7 +57,7 @@ export default function BahanSisaPage() {
     stok_total: 0,
   });
 
-  // Filter data
+  //filter data
   const filteredBahan = bahanList.filter(b => {
     const matchSearch = b.nama_bahan.toLowerCase().includes(search.toLowerCase()) ||
       b.warna.toLowerCase().includes(search.toLowerCase());
@@ -71,7 +71,6 @@ export default function BahanSisaPage() {
     let bValue: any = (b as any)[key];
 
     if (key === 'kategori') {
-      // Find category name for sorting
       const catA = kategoriList.find(k => k.kategori_id === a.kategori_id);
       const catB = kategoriList.find(k => k.kategori_id === b.kategori_id);
       aValue = catA ? catA.nama_kategori : '';
@@ -129,7 +128,7 @@ export default function BahanSisaPage() {
         berat_ukuran: formData.berat_ukuran.trim(),
         warna: formData.warna.trim(),
         stok_total: editingBahan ? formData.stok_total : (formData.stok_total || 0),
-        user_id: user?.user_id || 1  // For riwayat_stok recording
+        user_id: user?.user_id || 1  
       };
 
       if (editingBahan) {
@@ -142,7 +141,6 @@ export default function BahanSisaPage() {
         const result: any = await createBahan(payload);
         console.log('Create result:', result);
 
-        // Stok awal dan riwayat sudah dicatat di backend
         if (formData.stok_total > 0) {
           toast({
             title: "Berhasil",

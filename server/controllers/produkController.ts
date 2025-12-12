@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { db } from '../config/db';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
-// Get all produk jadi
 export const getAllProduk = async (req: Request, res: Response) => {
     try {
         const [rows] = await db.query('SELECT * FROM produk_jadi ORDER BY created_at DESC');
@@ -13,7 +12,6 @@ export const getAllProduk = async (req: Request, res: Response) => {
     }
 };
 
-// Get produk by ID with resep
 export const getProdukById = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
@@ -44,7 +42,6 @@ export const getProdukById = async (req: Request, res: Response) => {
     }
 };
 
-// Create new produk with resep
 export const createProduk = async (req: Request, res: Response) => {
     const { nama_produk, harga_jual, gambar_url, resep } = req.body;
 
@@ -56,7 +53,6 @@ export const createProduk = async (req: Request, res: Response) => {
     try {
         await connection.beginTransaction();
 
-        // Insert produk
         const [result] = await connection.query<ResultSetHeader>(
             'INSERT INTO produk_jadi (nama_produk, harga_jual, gambar_url, stok_total) VALUES (?, ?, ?, 0)',
             [nama_produk, harga_jual, gambar_url || null]
@@ -64,7 +60,6 @@ export const createProduk = async (req: Request, res: Response) => {
 
         const produkId = result.insertId;
 
-        // Insert resep items
         for (const item of resep) {
             if (item.bahan_id && item.jumlah_bahan > 0) {
                 await connection.query(
@@ -88,7 +83,6 @@ export const createProduk = async (req: Request, res: Response) => {
     }
 };
 
-// Update produk
 export const updateProduk = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { nama_produk, harga_jual, gambar_url, resep } = req.body;
@@ -97,7 +91,6 @@ export const updateProduk = async (req: Request, res: Response) => {
     try {
         await connection.beginTransaction();
 
-        // Update produk basic info
         const [result] = await connection.query<ResultSetHeader>(
             'UPDATE produk_jadi SET nama_produk = ?, harga_jual = ?, gambar_url = ? WHERE produk_id = ?',
             [nama_produk, harga_jual, gambar_url || null, id]
@@ -108,12 +101,9 @@ export const updateProduk = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Produk not found' });
         }
 
-        // Update resep if provided
         if (resep && Array.isArray(resep)) {
-            // Delete existing resep
             await connection.query('DELETE FROM resep_produk WHERE produk_id = ?', [id]);
 
-            // Insert new resep
             for (const item of resep) {
                 await connection.query(
                     'INSERT INTO resep_produk (produk_id, bahan_id, jumlah_bahan) VALUES (?, ?, ?)',
@@ -133,18 +123,13 @@ export const updateProduk = async (req: Request, res: Response) => {
     }
 };
 
-// Delete produk
 export const deleteProduk = async (req: Request, res: Response) => {
     const { id } = req.params;
-
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
-
-        // Delete resep first (foreign key)
         await connection.query('DELETE FROM resep_produk WHERE produk_id = ?', [id]);
 
-        // Delete produk
         const [result] = await connection.query<ResultSetHeader>(
             'DELETE FROM produk_jadi WHERE produk_id = ?',
             [id]
@@ -166,7 +151,6 @@ export const deleteProduk = async (req: Request, res: Response) => {
     }
 };
 
-// Produksi (manufacture) produk
 export const produksiProduk = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { user_id, jumlah = 1 } = req.body;
@@ -179,7 +163,6 @@ export const produksiProduk = async (req: Request, res: Response) => {
     try {
         await connection.beginTransaction();
 
-        // Get produk info
         const [produkRows] = await connection.query<RowDataPacket[]>(
             'SELECT * FROM produk_jadi WHERE produk_id = ?',
             [id]
@@ -192,7 +175,6 @@ export const produksiProduk = async (req: Request, res: Response) => {
 
         const produk = produkRows[0];
 
-        // Get resep
         const [resepRows] = await connection.query<RowDataPacket[]>(
             `SELECT rp.*, bs.stok_total, bs.nama_bahan, bs.warna, bs.berat_ukuran 
              FROM resep_produk rp
@@ -201,7 +183,6 @@ export const produksiProduk = async (req: Request, res: Response) => {
             [id]
         );
 
-        // Check if all bahan have enough stock
         for (const item of resepRows) {
             const neededAmount = item.jumlah_bahan * jumlah;
             if (item.stok_total < neededAmount) {
@@ -212,17 +193,14 @@ export const produksiProduk = async (req: Request, res: Response) => {
             }
         }
 
-        // Reduce bahan stock and record history
         for (const item of resepRows) {
             const neededAmount = item.jumlah_bahan * jumlah;
 
-            // Update bahan stock
             await connection.query(
                 'UPDATE bahan_sisa SET stok_total = stok_total - ? WHERE bahan_id = ?',
                 [neededAmount, item.bahan_id]
             );
 
-            // Record in riwayat_stok with cache
             const namaBahanCache = `${item.nama_bahan} - ${item.warna} (${item.berat_ukuran})`;
             await connection.query(
                 'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, nama_bahan_cache) VALUES (?, ?, ?, ?, ?, ?)',
@@ -230,7 +208,6 @@ export const produksiProduk = async (req: Request, res: Response) => {
             );
         }
 
-        // Increase produk stock
         await connection.query(
             'UPDATE produk_jadi SET stok_total = stok_total + ? WHERE produk_id = ?',
             [jumlah, id]
@@ -251,7 +228,6 @@ export const produksiProduk = async (req: Request, res: Response) => {
     }
 };
 
-// Get all resep
 export const getAllResep = async (req: Request, res: Response) => {
     try {
         const [rows] = await db.query(`

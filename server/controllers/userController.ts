@@ -18,8 +18,6 @@ export const getUsers = async (req: Request, res: Response) => {
     }
 };
 
-/* ... createUser ... */
-
 export const createUser = async (req: Request, res: Response) => {
     const { nama, email, password, role } = req.body;
 
@@ -28,7 +26,6 @@ export const createUser = async (req: Request, res: Response) => {
     }
 
     try {
-        // Check if email exists
         const [existing] = await db.query<any[]>('SELECT user_id FROM users WHERE email = ?', [email]);
         if (existing.length > 0) {
             return res.status(400).json({ message: 'Email already registered' });
@@ -48,8 +45,6 @@ export const createUser = async (req: Request, res: Response) => {
     }
 };
 
-/* ... updateUser ... */
-
 export const updateUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { nama, email, password, role } = req.body;
@@ -59,13 +54,11 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 
     try {
-        // Check if user exists (and not deleted)
         const [users] = await db.query<any[]>('SELECT user_id FROM users WHERE user_id = ? AND is_deleted = 0', [id]);
         if (users.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Check duplicate email
         const [existing] = await db.query<any[]>('SELECT user_id FROM users WHERE email = ? AND user_id != ? AND is_deleted = 0', [email, id]);
         if (existing.length > 0) {
             return res.status(400).json({ message: 'Email already used by another user' });
@@ -96,7 +89,6 @@ export const deleteUser = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
-        // Soft Delete
         await db.query('UPDATE users SET is_deleted = 1 WHERE user_id = ?', [id]);
         res.json({ message: 'User deleted successfully' });
     } catch (error: any) {
