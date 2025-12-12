@@ -194,7 +194,7 @@ export const produksiProduk = async (req: Request, res: Response) => {
 
         // Get resep
         const [resepRows] = await connection.query<RowDataPacket[]>(
-            `SELECT rp.*, bs.stok_total, bs.nama_bahan 
+            `SELECT rp.*, bs.stok_total, bs.nama_bahan, bs.warna, bs.berat_ukuran 
              FROM resep_produk rp
              JOIN bahan_sisa bs ON rp.bahan_id = bs.bahan_id
              WHERE rp.produk_id = ?`,
@@ -222,10 +222,11 @@ export const produksiProduk = async (req: Request, res: Response) => {
                 [neededAmount, item.bahan_id]
             );
 
-            // Record in riwayat_stok
+            // Record in riwayat_stok with cache
+            const namaBahanCache = `${item.nama_bahan} - ${item.warna} (${item.berat_ukuran})`;
             await connection.query(
-                'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan) VALUES (?, ?, ?, ?, ?)',
-                [item.bahan_id, 'keluar', neededAmount, user_id, `Produksi ${jumlah}x ${produk.nama_produk}`]
+                'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, nama_bahan_cache) VALUES (?, ?, ?, ?, ?, ?)',
+                [item.bahan_id, 'keluar', neededAmount, user_id, `Produksi ${jumlah}x ${produk.nama_produk}`, namaBahanCache]
             );
         }
 

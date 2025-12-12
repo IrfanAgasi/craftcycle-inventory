@@ -123,12 +123,13 @@ export default function BahanSisaPage() {
     }
 
     try {
-      const payload = {
+      const payload: any = {
         nama_bahan: formData.nama_bahan.trim(),
         kategori_id: parseInt(formData.kategori_id),
         berat_ukuran: formData.berat_ukuran.trim(),
         warna: formData.warna.trim(),
-        stok_total: editingBahan ? formData.stok_total : (formData.stok_total || 0)
+        stok_total: editingBahan ? formData.stok_total : (formData.stok_total || 0),
+        user_id: user?.user_id || 1  // For riwayat_stok recording
       };
 
       if (editingBahan) {
@@ -141,57 +142,12 @@ export default function BahanSisaPage() {
         const result: any = await createBahan(payload);
         console.log('Create result:', result);
 
-        const newBahanId = result?.bahan_id || result?.data?.bahan_id || result?.id;
-        console.log('New Bahan ID:', newBahanId);
-
-        // Jika ada stok awal, catat sebagai transaksi stok masuk
-        if (formData.stok_total > 0 && newBahanId) {
-          try {
-            const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
-            const user = userStr ? JSON.parse(userStr) : null;
-            const userId = user?.user_id || 1;
-
-            const stokMasukPayload = {
-              bahan_id: newBahanId,
-              jumlah: formData.stok_total,
-              keterangan: 'Stok awal saat menambah bahan baru',
-              user_id: userId
-            };
-
-            console.log('Payload stok masuk:', stokMasukPayload);
-
-            // Panggil API untuk create stok masuk
-            const stokResponse = await fetch(`${API_URL}/transactions/in`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` },
-              body: JSON.stringify(stokMasukPayload)
-            });
-
-            const responseData = await stokResponse.json();
-
-            if (stokResponse.ok) {
-              console.log('Riwayat stok masuk berhasil tercatat');
-              toast({
-                title: "Berhasil",
-                description: "Bahan dan stok awal berhasil ditambahkan"
-              });
-            } else {
-              console.error('Gagal mencatat riwayat stok:', responseData);
-              toast({
-                title: "Peringatan",
-                description: "Bahan berhasil ditambah, tetapi gagal mencatat riwayat stok",
-                variant: "destructive",
-              });
-            }
-          } catch (stokError) {
-            console.error('Exception saat mencatat riwayat stok:', stokError);
-            toast({
-              title: "Peringatan",
-              description: "Bahan berhasil ditambah, tetapi gagal mencatat riwayat stok",
-              variant: "destructive",
-            });
-          }
+        // Stok awal dan riwayat sudah dicatat di backend
+        if (formData.stok_total > 0) {
+          toast({
+            title: "Berhasil",
+            description: "Bahan dan stok awal berhasil ditambahkan"
+          });
         } else {
           toast({ title: "Berhasil", description: "Bahan baru berhasil ditambahkan" });
         }
@@ -201,7 +157,7 @@ export default function BahanSisaPage() {
       console.error('Error:', error);
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Gagal menyimpan data. Cek console untuk detail",
+        description: error.message || "Bahan ini sudah ada di inventory. Tambahkan stok pada halaman stok masuk",
         variant: "destructive",
       });
     }

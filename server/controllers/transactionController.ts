@@ -25,10 +25,18 @@ export const stokMasuk = async (req: Request, res: Response) => {
             [jumlah, bahan_id]
         );
 
+        // Get bahan info for cache
+        const [bahanRows] = await connection.query<any[]>(
+            'SELECT nama_bahan, warna, berat_ukuran FROM bahan_sisa WHERE bahan_id = ?',
+            [bahan_id]
+        );
+        const bahan = bahanRows[0];
+        const namaBahanCache = bahan ? `${bahan.nama_bahan} - ${bahan.warna} (${bahan.berat_ukuran})` : null;
+
         // 3. Catat di riwayat_stok
         await connection.query(
-            'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, tanggal) VALUES (?, ?, ?, ?, ?, NOW())',
-            [bahan_id, 'masuk', jumlah, user_id, keterangan || 'Stok Masuk']
+            'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, tanggal, nama_bahan_cache) VALUES (?, ?, ?, ?, ?, NOW(), ?)',
+            [bahan_id, 'masuk', jumlah, user_id, keterangan || 'Stok Masuk', namaBahanCache]
         );
 
         await connection.commit();
@@ -55,7 +63,7 @@ export const stokKeluar = async (req: Request, res: Response) => {
 
         // Cek stok dulu
         const [rows] = await connection.query<any[]>(
-            'SELECT stok_total, nama_bahan FROM bahan_sisa WHERE bahan_id = ?',
+            'SELECT stok_total, nama_bahan, warna, berat_ukuran FROM bahan_sisa WHERE bahan_id = ?',
             [bahan_id]
         );
 
@@ -83,9 +91,12 @@ export const stokKeluar = async (req: Request, res: Response) => {
         // 3. Catat di riwayat_stok
         const tipe = (keterangan && keterangan.startsWith('Rusak')) ? 'rusak' : 'keluar';
 
+        // Cache nama bahan
+        const namaBahanCache = `${rows[0].nama_bahan} - ${rows[0].warna} (${rows[0].berat_ukuran})`;
+
         await connection.query(
-            'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, tanggal) VALUES (?, ?, ?, ?, ?, NOW())',
-            [bahan_id, tipe, jumlah, user_id, keterangan || 'Stok Keluar']
+            'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, tanggal, nama_bahan_cache) VALUES (?, ?, ?, ?, ?, NOW(), ?)',
+            [bahan_id, tipe, jumlah, user_id, keterangan || 'Stok Keluar', namaBahanCache]
         );
 
         // 4. Jika Rusak, catat di bahan_rusak

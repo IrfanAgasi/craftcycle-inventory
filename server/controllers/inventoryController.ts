@@ -35,10 +35,34 @@ export const createInventory = async (req: Request, res: Response) => {
     }
 
     try {
+        // Check if bahan with same nama_bahan + warna + berat_ukuran already exists
+        const [existingRows] = await db.query<RowDataPacket[]>(
+            'SELECT * FROM bahan_sisa WHERE nama_bahan = ? AND warna = ? AND berat_ukuran = ?',
+            [nama_bahan, warna, berat_ukuran]
+        );
+
+        if (existingRows.length > 0) {
+            return res.status(400).json({
+                message: 'Bahan ini sudah ada di inventory. Tambahkan stok pada halaman stok masuk',
+                error: 'DUPLICATE_BAHAN'
+            });
+        }
+
         const [result] = await db.query<ResultSetHeader>(
             'INSERT INTO bahan_sisa (nama_bahan, kategori_id, berat_ukuran, warna, stok_total) VALUES (?, ?, ?, ?, ?)',
             [nama_bahan, kategori_id, berat_ukuran, warna, stok_total || 0]
         );
+
+        // If there's initial stock, record it in riwayat_stok
+        if (stok_total > 0) {
+            const user_id = req.body.user_id || 1; // Get user_id from request or default to 1
+            const namaBahanCache = `${nama_bahan} - ${warna} (${berat_ukuran})`;
+            await db.query(
+                'INSERT INTO riwayat_stok (bahan_id, tipe, jumlah, user_id, keterangan, tanggal, nama_bahan_cache) VALUES (?, ?, ?, ?, ?, NOW(), ?)',
+                [result.insertId, 'masuk', stok_total, user_id, 'Stok awal saat menambah bahan baru', namaBahanCache]
+            );
+        }
+
         res.status(201).json({
             message: 'Item created',
             id: result.insertId,
