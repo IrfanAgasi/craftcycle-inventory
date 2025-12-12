@@ -32,6 +32,11 @@ export default function Dashboard() {
     return kategoriList.find(k => k.kategori_id === id)?.nama_kategori;
   };
 
+  const getKategoriColor = (id: number): 'pink' | 'lavender' | 'teal' | 'mint' | 'orange' => {
+    const colors: Array<'pink' | 'lavender' | 'teal' | 'mint' | 'orange'> = ['pink', 'lavender', 'teal', 'mint', 'orange'];
+    return colors[id % colors.length];
+  };
+
   if (!stats) return <div className="p-8 text-center">Loading Dashboard...</div>;
 
   // Table columns
@@ -47,7 +52,7 @@ export default function Dashboard() {
       key: 'kategori',
       header: 'Kategori',
       render: (item: BahanSisa) => (
-        <Y2KBadge variant="lavender">
+        <Y2KBadge variant={getKategoriColor(item.kategori_id)}>
           {getKategoriName(item.kategori_id)}
         </Y2KBadge>
       )

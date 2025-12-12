@@ -382,8 +382,9 @@ export default function ProduksiPage() {
                 key={produk.produk_id}
                 className={`
                 relative overflow-hidden rounded-2xl border-2 p-5
-                bg-gradient-to-br ${colorClass}
+                bg-white border-gray-300
                 transition-all duration-300 hover:shadow-y2k hover:scale-[1.02] cursor-pointer
+                hover:bg-gradient-to-br ${colorClass}
         `}
                 onClick={() => openDetail(produk)}
               >
@@ -394,7 +395,7 @@ export default function ProduksiPage() {
                   <div className="space-y-4">
                     {/* Product Image or Icon */}
                     {produk.gambar_url && produk.gambar_url.trim() !== '' ? (
-                      <div className="w-full aspect-square rounded-2xl overflow-hidden bg-white shadow-sm">
+                      <div className="w-full aspect-square rounded-2xl overflow-hidden bg-white shadow-sm border-2 border-gray-200">
                         <img
                           src={produk.gambar_url}
                           alt={produk.nama_produk}

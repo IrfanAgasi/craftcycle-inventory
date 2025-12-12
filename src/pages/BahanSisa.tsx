@@ -235,6 +235,11 @@ export default function BahanSisaPage() {
     return kat ? kat.nama_kategori : 'Unknown';
   };
 
+  const getKategoriColor = (id: number): 'pink' | 'lavender' | 'teal' | 'mint' | 'orange' => {
+    const colors: Array<'pink' | 'lavender' | 'teal' | 'mint' | 'orange'> = ['pink', 'lavender', 'teal', 'mint', 'orange'];
+    return colors[id % colors.length];
+  };
+
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
     if (sortConfig?.key !== columnKey) return <ArrowUpCircle className="w-4 h-4 text-muted-foreground/30" />;
     return sortConfig.direction === 'asc'
@@ -264,7 +269,7 @@ export default function BahanSisaPage() {
       key: 'kategori',
       header: renderHeader('Kategori', 'kategori'),
       render: (item: BahanSisa) => (
-        <Y2KBadge variant="lavender">
+        <Y2KBadge variant={getKategoriColor(item.kategori_id)}>
           {getKategoriName(item.kategori_id)}
         </Y2KBadge>
       )

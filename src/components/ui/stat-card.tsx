@@ -14,13 +14,30 @@ interface StatCardProps {
 }
 
 const variantStyles = {
-  default: 'from-card to-muted/30 border-border/50',
-  pink: 'from-y2k-pink-light/40 to-y2k-pink-light/10 border-y2k-pink/30',
-  teal: 'from-y2k-teal-light/40 to-y2k-teal-light/10 border-y2k-teal/30',
-  lavender: 'from-y2k-lavender-light/40 to-y2k-lavender-light/10 border-y2k-lavender/30',
-  mint: 'from-y2k-mint/40 to-y2k-mint/10 border-y2k-mint',
-  warning: 'from-y2k-yellow/40 to-y2k-yellow/10 border-y2k-orange/30',
-  danger: 'from-destructive/20 to-destructive/5 border-destructive/30',
+  // default: 'from-card to-muted/30 border-border/50',
+  // pink: 'from-y2k-pink-light/40 to-y2k-pink-light/10 border-y2k-pink/30',
+  // teal: 'from-y2k-teal-light/40 to-y2k-teal-light/10 border-y2k-teal/30',
+  // lavender: 'from-y2k-lavender-light/40 to-y2k-lavender-light/10 border-y2k-lavender/30',
+  // mint: 'from-y2k-mint/40 to-y2k-mint/10 border-y2k-mint',
+  // warning: 'from-y2k-yellow/40 to-y2k-yellow/10 border-y2k-orange/30',
+  // danger: 'from-destructive/20 to-destructive/5 border-destructive/30',
+  default: 'from-white to-white border-y2k-pink/30',
+  pink: 'from-white to-white border-y2k-pink/30',
+  teal: 'from-white to-white border-y2k-pink/30',
+  lavender: 'from-white to-white border-y2k-pink/30',
+  mint: 'from-white to-white border-y2k-pink/30',
+  warning: 'from-white to-white border-y2k-pink/30',
+  danger: 'from-white to-white border-y2k-pink/30',
+};
+
+const hoverVariantStyles = {
+  default: 'hover:from-gray-100 hover:to-gray-50',
+  pink: 'hover:from-y2k-pink-light/60 hover:to-y2k-pink-light/30',
+  teal: 'hover:from-y2k-teal-light/60 hover:to-y2k-teal-light/30',
+  lavender: 'hover:from-y2k-lavender-light/60 hover:to-y2k-lavender-light/30',
+  mint: 'hover:from-y2k-mint/50 hover:to-y2k-mint/20',
+  warning: 'hover:from-y2k-yellow/50 hover:to-y2k-yellow/20',
+  danger: 'hover:from-destructive/30 hover:to-destructive/10',
 };
 
 const iconStyles = {
@@ -47,6 +64,7 @@ export function StatCard({
       "bg-gradient-to-br backdrop-blur-sm",
       "transition-all duration-300 hover:shadow-y2k hover:scale-[1.02]",
       variantStyles[variant],
+      hoverVariantStyles[variant],
       className
     )}>
       <div className="flex items-start justify-between">
