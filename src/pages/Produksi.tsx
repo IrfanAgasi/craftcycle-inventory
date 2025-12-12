@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Package, Check, X, Factory, Plus, Upload, Trash2, Pencil } from 'lucide-react';
+import { Sparkles, Package, Check, X, Factory, Plus, Upload, Trash2, Pencil, Search } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Y2KBadge } from '@/components/ui/y2k-badge';
@@ -62,7 +62,12 @@ export default function ProduksiPage() {
     { bahan_id: 0, jumlah_bahan: 0 }
   ]);
   const [editPreviewImage, setEditPreviewImage] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // Filter products based on search query
+  const filteredProdukList = produkList.filter(produk =>
+    produk.nama_produk.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const openDetail = (produk: ProdukJadi) => {
     setSelectedProduk(produk);
@@ -344,31 +349,43 @@ export default function ProduksiPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <PageHeader
-          title="Auto Craft"
-          description="Produksi kerajinan dari bahan sisa"
-          icon={Sparkles}
-        />
+      <PageHeader
+        title="Auto Craft"
+        description="Produksi kerajinan dari bahan sisa"
+        icon={Sparkles}
+      >
         {hasRole(['admin', 'manager']) && (
           <Button
             onClick={() => setIsAddDialogOpen(true)}
-            className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90 rounded-xl"
+            className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90"
           >
             <Plus className="w-4 h-4 mr-2" />
             Tambah Produk
           </Button>
         )}
+      </PageHeader>
+
+      {/* Search Bar */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Cari produk berdasarkan nama..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 rounded-xl border-2"
+        />
       </div>
 
       {/* Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {loading ? (
           <div className="col-span-full text-center py-8 text-muted-foreground">Loading...</div>
-        ) : produkList.length === 0 ? (
-          <div className="col-span-full text-center py-8 text-muted-foreground">Belum ada produk</div>
+        ) : filteredProdukList.length === 0 ? (
+          <div className="col-span-full text-center py-8 text-muted-foreground">
+            {searchQuery ? `Tidak ada produk dengan nama "${searchQuery}"` : 'Belum ada produk'}
+          </div>
         ) : (
-          produkList.map((produk, index) => {
+          filteredProdukList.map((produk, index) => {
             const stokCukup = checkStokCukup(produk.produk_id);
             const colorClass = cardColors[index % cardColors.length];
 
