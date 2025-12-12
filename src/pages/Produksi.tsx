@@ -297,9 +297,8 @@ export default function ProduksiPage() {
     }
 
     try {
-      let imageUrl = editPreviewImage; // Keep existing image URL
+      let imageUrl = editPreviewImage;
 
-      // Upload new image if file was changed
       if (editProduk.gambar) {
         const uploadResult = await uploadProductImage(editProduk.gambar);
         imageUrl = `http://localhost:3000${uploadResult.imageUrl}`;
@@ -342,8 +341,6 @@ export default function ProduksiPage() {
     'from-y2k-yellow/30 to-y2k-orange/20 border-y2k-orange/40',
     'from-y2k-mint to-y2k-teal-light border-y2k-mint',
   ];
-
-
 
   return (
     <div className="space-y-6">
@@ -679,7 +676,11 @@ export default function ProduksiPage() {
                           <SelectValue placeholder="Pilih bahan" />
                         </SelectTrigger>
                         <SelectContent>
-                          {bahanList.map((bahan) => (
+                          {[...bahanList].sort((a, b) => {
+                            const namaCompare = a.nama_bahan.localeCompare(b.nama_bahan);
+                            if (namaCompare !== 0) return namaCompare;
+                            return a.warna.localeCompare(b.warna);
+                          }).map((bahan) => (
                             <SelectItem key={bahan.bahan_id} value={bahan.bahan_id.toString()}>
                               {bahan.nama_bahan} <span className="text-muted-foreground">- {bahan.warna} ({bahan.berat_ukuran})</span>
                             </SelectItem>
@@ -836,7 +837,11 @@ export default function ProduksiPage() {
                           <SelectValue placeholder="Pilih bahan" />
                         </SelectTrigger>
                         <SelectContent>
-                          {bahanList.map((bahan) => (
+                          {[...bahanList].sort((a, b) => {
+                            const namaCompare = a.nama_bahan.localeCompare(b.nama_bahan);
+                            if (namaCompare !== 0) return namaCompare;
+                            return a.warna.localeCompare(b.warna);
+                          }).map((bahan) => (
                             <SelectItem key={bahan.bahan_id} value={bahan.bahan_id.toString()}>
                               {bahan.nama_bahan} <span className="text-muted-foreground">- {bahan.warna} ({bahan.berat_ukuran})</span>
                             </SelectItem>

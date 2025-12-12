@@ -29,14 +29,13 @@ import type { BahanSisa } from '@/types/database';
 const API_URL = 'http://localhost:3000/api';
 
 export default function BahanSisaPage() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { inventory: bahanList, kategori: kategoriList, isLoading, createBahan, updateBahan, deleteBahan } = useInventory();
 
   const [search, setSearch] = useState('');
   const [filterKategori, setFilterKategori] = useState('all');
-  // const [filterKondisi, setFilterKondisi] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBahan, setEditingBahan] = useState<BahanSisa | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'nama_bahan', direction: 'asc' });
@@ -63,7 +62,6 @@ export default function BahanSisaPage() {
     const matchSearch = b.nama_bahan.toLowerCase().includes(search.toLowerCase()) ||
       b.warna.toLowerCase().includes(search.toLowerCase());
     const matchKategori = filterKategori === 'all' || b.kategori_id.toString() === filterKategori;
-    // const matchKondisi = filterKondisi === 'all' || b.kondisi === filterKondisi;
     return matchSearch && matchKategori;
   }).sort((a, b) => {
     if (!sortConfig) return 0;
@@ -109,7 +107,6 @@ export default function BahanSisaPage() {
       kategori_id: bahan.kategori_id.toString(),
       berat_ukuran: bahan.berat_ukuran,
       warna: bahan.warna,
-      // kondisi: bahan.kondisi,
       stok_total: bahan.stok_total,
     });
     setIsDialogOpen(true);
@@ -211,12 +208,24 @@ export default function BahanSisaPage() {
   };
 
   const handleDelete = async (bahan: BahanSisa) => {
-    if (confirm(`Hapus bahan "${bahan.nama_bahan}"?`)) {
+    if (confirm(`Hapus bahan "${bahan.nama_bahan}"?${bahan.stok_total > 0 ? `\n\nStok yang akan dihapus: ${bahan.stok_total}` : ''}`)) {
       try {
-        await deleteBahan(bahan.bahan_id);
-        toast({ title: "Berhasil", description: "Bahan berhasil dihapus" });
+        if (!user) {
+          toast({ title: "Error", description: "User tidak ditemukan", variant: "destructive" });
+          return;
+        }
+        const result = await deleteBahan({ id: bahan.bahan_id, user_id: user.user_id });
+        toast({
+          title: "Berhasil",
+          description: `${result.bahanName} berhasil dihapus. Tercatat di riwayat stok.`
+        });
       } catch (error) {
-        toast({ title: "Error", description: "Gagal menghapus bahan", variant: "destructive" });
+        console.error('Error deleting bahan:', error);
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Gagal menghapus bahan",
+          variant: "destructive"
+        });
       }
     }
   };
@@ -376,6 +385,7 @@ export default function BahanSisaPage() {
               {editingBahan ? 'Edit Bahan' : 'Tambah Bahan Baru'}
             </DialogTitle>
           </DialogHeader>
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Nama Bahan</Label>
@@ -421,23 +431,6 @@ export default function BahanSisaPage() {
                 />
               </div>
             </div>
-            {/* <div className="grid grid-cols-2 gap-4"> */}
-            {/* <div className="space-y-2">
-                <Label>Kondisi</Label>
-                <Select
-                  value={formData.kondisi}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, kondisi: v as KondisiBahan }))}
-                >
-                  <SelectTrigger className="rounded-xl border-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mentah">Mentah</SelectItem>
-                    <SelectItem value="siap-olah">Siap Olah</SelectItem>
-                    <SelectItem value="rusak">Rusak</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div> */}
             <div className="space-y-2">
               <Label>{editingBahan ? 'Stok Total' : 'Stok Awal'}</Label>
               <Input
@@ -450,8 +443,8 @@ export default function BahanSisaPage() {
                 placeholder={editingBahan ? "Stok total tidak dapat diubah" : "Masukkan stok awal"}
               />
             </div>
-            {/* </div> */}
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
               Batal

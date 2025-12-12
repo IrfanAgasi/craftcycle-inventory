@@ -3,6 +3,7 @@ import { BahanSisa, KategoriBahan, RiwayatStok, User, BahanRusak } from '../type
 export interface RiwayatStokExtended extends RiwayatStok {
     nama_bahan: string;
     warna: string;
+    berat_ukuran?: string;
     user_name: string;
     user_role: string;
 }
@@ -188,13 +189,17 @@ export const updateBahan = async (id: number, data: Partial<BahanSisa>): Promise
     }
 };
 
-export const deleteBahan = async (id: number): Promise<void> => {
+export const deleteBahan = async (id: number, user_id: number): Promise<{ deletedStock: number; bahanName: string }> => {
     const response = await fetch(`${API_URL}/inventory/${id}`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id }),
     });
     if (!response.ok) {
-        throw new Error('Failed to delete item');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || 'Failed to delete item');
     }
+    return response.json();
 };
 
 export const postStokMasuk = async (data: { bahan_id: number; jumlah: number; user_id: number; keterangan?: string }): Promise<void> => {

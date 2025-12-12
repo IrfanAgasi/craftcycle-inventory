@@ -73,14 +73,60 @@ export const updateInventory = async (req: Request, res: Response) => {
 
 export const deleteInventory = async (req: Request, res: Response) => {
     const { id } = req.params;
+    const { user_id } = req.body;
+
     try {
-        const [result] = await db.query<ResultSetHeader>('DELETE FROM bahan_sisa WHERE bahan_id = ?', [id]);
+        // Get bahan data before deleting  
+        const [rows] = await db.query<RowDataPacket[]>(
+            'SELECT * FROM bahan_sisa WHERE bahan_id = ?',
+            [id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+
+        const bahan = rows[0];
+
+        // Step 1: Try to delete the bahan first (resep_produk CASCADE, others SET NULL)
+        const [result] = await db.query<ResultSetHeader>(
+            'DELETE FROM bahan_sisa WHERE bahan_id = ?',
+            [id]
+        );
+
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Item not found' });
         }
-        res.json({ message: 'Item deleted successfully' });
-    } catch (error) {
+
+        // Step 2: Record deletion to riwayat_stok ONLY if delete was successful
+        if (bahan.stok_total > 0 && user_id) {
+            // Format: "Nama - warna (ukuran)" for complete info
+            const cacheValue = `${bahan.nama_bahan} - ${bahan.warna} (${bahan.berat_ukuran})`;
+            await db.query(
+                'INSERT INTO riwayat_stok (bahan_id, nama_bahan_cache, tipe, jumlah, user_id, keterangan, tanggal) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+                [null, cacheValue, 'keluar', bahan.stok_total, user_id, 'Bahan dihapus dari inventory']
+            );
+        }
+
+        res.json({
+            message: 'Item deleted successfully',
+            deletedStock: bahan.stok_total,
+            bahanName: `${bahan.nama_bahan} (${bahan.warna}${bahan.berat_ukuran ? ' - ' + bahan.berat_ukuran : ''})`
+        });
+    } catch (error: any) {
         console.error('Error deleting item:', error);
-        res.status(500).json({ message: 'Internal Server Error' });
+
+        // Check if error is foreign key constraint from resep_produk
+        if (error.code === 'ER_ROW_IS_REFERENCED_2' && error.sqlMessage?.includes('resep_produk')) {
+            return res.status(400).json({
+                message: 'Bahan tidak bisa dihapus karena masih dibutuhkan untuk produksi',
+                error: 'FK_CONSTRAINT_RESEP'
+            });
+        }
+
+        res.status(500).json({
+            message: 'Internal Server Error',
+            error: error.message
+        });
     }
 };

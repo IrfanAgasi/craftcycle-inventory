@@ -159,10 +159,13 @@ export default function RiwayatPage() {
       key: 'bahan',
       header: renderHeader('Bahan', 'bahan'),
       render: (item: RiwayatStokExtended) => {
+        const detail = item.berat_ukuran
+          ? `${item.warna || ''} - ${item.berat_ukuran}`.trim()
+          : item.warna || '';
         return (
           <div>
-            <p className="font-medium">{item.nama_bahan}</p>
-            <p className="text-xs text-muted-foreground">{item.warna}</p>
+            <p className="font-medium">{item.nama_bahan || 'Bahan tidak diketahui'}</p>
+            {detail && <p className="text-xs text-muted-foreground">{detail}</p>}
           </div>
         );
       }

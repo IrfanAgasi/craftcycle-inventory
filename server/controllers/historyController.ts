@@ -15,8 +15,22 @@ export const getHistory = async (req: Request, res: Response) => {
         r.user_id,
         r.keterangan,
         r.tanggal,
-        b.nama_bahan, 
-        b.warna, 
+        COALESCE(
+          b.nama_bahan, 
+          TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(r.nama_bahan_cache, ' - ', 1), ' (', 1))
+        ) as nama_bahan,
+        COALESCE(
+          b.warna,
+          TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(r.nama_bahan_cache, ' - ', -1), ' (', 1))
+        ) as warna,
+        COALESCE(
+          b.berat_ukuran,
+          CASE 
+            WHEN r.nama_bahan_cache LIKE '%(%' 
+            THEN TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(r.nama_bahan_cache, '(', -1), ')', 1))
+            ELSE NULL
+          END
+        ) as berat_ukuran,
         u.nama as user_name,
         u.role as user_role 
       FROM riwayat_stok r

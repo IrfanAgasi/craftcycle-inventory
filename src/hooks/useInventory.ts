@@ -111,9 +111,10 @@ export const useInventory = () => {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: deleteBahan,
+        mutationFn: ({ id, user_id }: { id: number; user_id: number }) => deleteBahan(id, user_id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['inventory'] });
+            queryClient.invalidateQueries({ queryKey: ['history'] });
         },
     });
 
