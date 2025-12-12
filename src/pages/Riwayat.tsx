@@ -199,7 +199,9 @@ export default function RiwayatPage() {
       key: 'keterangan',
       header: renderHeader('Keterangan', 'keterangan'),
       render: (item: RiwayatStokExtended) => (
-        <span className="text-sm text-muted-foreground">{item.keterangan || '-'}</span>
+        <span className="text-sm text-muted-foreground whitespace-normal break-words max-w-[200px] block">
+          {item.keterangan || '-'}
+        </span>
       )
     },
   ];

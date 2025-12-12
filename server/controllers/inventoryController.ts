@@ -5,7 +5,16 @@ import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export const getAllInventory = async (req: Request, res: Response) => {
     try {
-        const [rows] = await db.query('SELECT * FROM bahan_sisa');
+        // Get all bahan with their latest activity timestamp
+        // Order by latest riwayat_stok activity first, then by bahan_id for new items
+        const [rows] = await db.query(`
+            SELECT bs.*, 
+                   MAX(rs.tanggal) as last_activity
+            FROM bahan_sisa bs
+            LEFT JOIN riwayat_stok rs ON bs.bahan_id = rs.bahan_id
+            GROUP BY bs.bahan_id
+            ORDER BY COALESCE(MAX(rs.tanggal), '1970-01-01') DESC, bs.bahan_id DESC
+        `);
         res.json(rows);
     } catch (error) {
         console.error('Error fetching inventory:', error);

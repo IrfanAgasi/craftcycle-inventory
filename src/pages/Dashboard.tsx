@@ -177,7 +177,7 @@ export default function Dashboard() {
       {/* Bahan Sisa Table */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold font-space">Daftar Bahan Sisa (Baru)</h2>
+          <h2 className="text-xl font-bold font-space">Aktivitas Bahan Terbaru</h2>
           {hasRole(['admin', 'staff']) && (
             <Button
               onClick={() => navigate('/bahan')}
@@ -188,7 +188,7 @@ export default function Dashboard() {
             </Button>
           )}
         </div>
-        {/* Slicing 10 newest items if we assume they are sorted by ID or updated_at. Simple slice is fine. */}
+        {/* Menampilkan 10 bahan dengan aktivitas terbaru (stok masuk/keluar/tambah bahan) */}
         <DataTable
           data={bahanList.slice(0, 10)}
           columns={columns}

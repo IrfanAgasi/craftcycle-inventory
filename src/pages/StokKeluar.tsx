@@ -111,7 +111,10 @@ export default function StokKeluarPage() {
       if (formData.alasan === 'tambahan_produksi') {
         const produk = produkJadi.find(p => p.produk_id.toString() === formData.produk_id);
         const namaProduk = produk ? produk.nama_produk : 'Unknown';
-        finalKeterangan = `Tambahan Produksi (${namaProduk}): ${formData.keterangan}`;
+        // Only add colon if there's additional keterangan
+        finalKeterangan = formData.keterangan.trim()
+          ? `Tambahan Produksi (${namaProduk}): ${formData.keterangan}`
+          : `Tambahan Produksi (${namaProduk})`;
         displayAlasan = 'tambahan produksi';
       } else if (formData.alasan === 'lainnya') {
         finalKeterangan = `Lainnya: ${formData.keterangan}`;
