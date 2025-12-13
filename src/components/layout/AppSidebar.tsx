@@ -75,13 +75,13 @@ const menuItems = [
     title: 'Laporan',
     url: '/laporan',
     icon: PieChart,
-    roles: ['manager'] as const
+    roles: ['manager', 'admin'] as const
   },
   {
     title: 'Audit User',
     url: '/audit',
     icon: ClipboardCheck,
-    roles: ['manager'] as const
+    roles: ['manager', 'admin'] as const
   },
 ];
 

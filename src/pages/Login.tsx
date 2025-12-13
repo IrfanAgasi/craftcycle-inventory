@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Recycle, Sparkles, Mail, Lock } from 'lucide-react';
+import { Sparkles, Mail, Lock } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -54,15 +54,19 @@ export default function Login() {
 
       <div className="relative w-full max-w-md">
         {/* Card */}
-        <div className="y2k-card p-8 space-y-8">
+        <div className="y2k-card p-6 space-y-2">
           {/* Logo */}
-          <div className="text-center space-y-4">
-            <div className="inline-flex p-4 rounded-3xl bg-gradient-to-br from-y2k-pink to-y2k-teal shadow-glow animate-pulse-glow">
-              <Recycle className="w-12 h-12 text-primary-foreground" />
+          <div className="text-center space-y-1">
+            <div className="inline-flex">
+              <img
+                src="/logo.png"
+                alt="Craft Cycle Logo"
+                className="w-40 h-40 object-contain drop-shadow-lg"
+              />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gradient font-space">Craft Cycle</h1>
-              <p className="text-muted-foreground mt-2 flex items-center justify-center gap-2">
+              <p className="text-muted-foreground mt-0 flex items-center justify-center gap-2">
                 <Sparkles className="w-4 h-4 text-y2k-pink" />
                 Transforming Waste into Wonders
                 <Sparkles className="w-4 h-4 text-y2k-teal" />
@@ -71,7 +75,7 @@ export default function Login() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-foreground font-medium">
                 Email
