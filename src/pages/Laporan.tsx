@@ -14,7 +14,7 @@ import {
     Pie,
     Cell
 } from 'recharts';
-import { fetchMonthlyTrends, fetchTopMaterials, fetchCategoryDistribution } from '@/services/api';
+import { fetchWeeklyTrends, fetchTopMaterials, fetchCategoryDistribution } from '@/services/api';
 import { PageHeader } from '@/components/ui/page-header';
 import { PieChart as PieChartIcon, TrendingUp, BarChart as BarChartIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,8 +23,8 @@ const COLORS = ['#FF69B4', '#E6E6FA', '#008080', '#98FF98', '#FFA500', '#f472b6'
 
 export default function Laporan() {
     const { data: trends, isLoading: trendsLoading } = useQuery({
-        queryKey: ['analytics-trends'],
-        queryFn: fetchMonthlyTrends
+        queryKey: ['analytics-trends-weekly'],
+        queryFn: fetchWeeklyTrends
     });
 
     const { data: topMaterials, isLoading: topMaterialsLoading } = useQuery({
@@ -50,14 +50,14 @@ export default function Laporan() {
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Monthly Trends */}
+                {/* Weekly Trends */}
                 <Card className="col-span-1 lg:col-span-2 border-2 shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-all duration-300">
                     <CardHeader className="bg-muted/30">
                         <div className="flex items-center gap-2">
                             <TrendingUp className="w-5 h-5 text-primary" />
-                            <CardTitle>Tren Stok Bulanan</CardTitle>
+                            <CardTitle>Grafik stok mingguan</CardTitle>
                         </div>
-                        <CardDescription>Perbandingan stok masuk, keluar, dan rusak (6 bulan terakhir)</CardDescription>
+                        <CardDescription>Perbandingan stok masuk, keluar, dan rusak (12 minggu terakhir)</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6">
                         <div className="h-[350px] w-full">
@@ -94,7 +94,7 @@ export default function Laporan() {
                                 <BarChart data={topMaterials} layout="vertical" margin={{ left: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
                                     <XAxis type="number" fontSize={12} stroke="#888888" />
-                                    <YAxis dataKey="name" type="category" width={100} fontSize={12} stroke="#888888" />
+                                    <YAxis dataKey="name" type="category" width={150} fontSize={12} stroke="#888888" />
                                     <Tooltip
                                         cursor={{ fill: 'transparent' }}
                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}

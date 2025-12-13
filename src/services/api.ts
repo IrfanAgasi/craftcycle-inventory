@@ -364,6 +364,12 @@ export const fetchMonthlyTrends = async () => {
     return response.json();
 };
 
+export const fetchWeeklyTrends = async () => {
+    const response = await fetch(`${API_URL}/analytics/trends/weekly`);
+    if (!response.ok) throw new Error('Failed to fetch weekly trends');
+    return response.json();
+};
+
 export const fetchTopMaterials = async () => {
     const response = await fetch(`${API_URL}/analytics/top-materials`);
     if (!response.ok) throw new Error('Failed to fetch top materials');

@@ -36,11 +36,44 @@ export const getMonthlyTrends = async (req: Request, res: Response) => {
     }
 };
 
+export const getWeeklyTrends = async (req: Request, res: Response) => {
+    try {
+        const query = `
+            SELECT 
+                DATE_FORMAT(tanggal, '%X-W%V') as week,
+                tipe, 
+                SUM(jumlah) as total 
+            FROM riwayat_stok 
+            WHERE tanggal >= DATE_SUB(NOW(), INTERVAL 12 WEEK) 
+            GROUP BY week, tipe 
+            ORDER BY week ASC
+        `;
+
+        const [rows] = await db.query<RowDataPacket[]>(query);
+
+        const weeklyData: Record<string, any> = {};
+
+        rows.forEach(row => {
+            if (!weeklyData[row.week]) {
+                weeklyData[row.week] = { name: row.week, masuk: 0, keluar: 0, rusak: 0 };
+            }
+            if (row.tipe === 'masuk') weeklyData[row.week].masuk = Number(row.total);
+            else if (row.tipe === 'keluar' || row.tipe === 'produksi') weeklyData[row.week].keluar += Number(row.total);
+            else if (row.tipe === 'rusak') weeklyData[row.week].rusak = Number(row.total);
+        });
+
+        res.json(Object.values(weeklyData));
+    } catch (error) {
+        console.error('Error fetching weekly trends:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const getTopMaterials = async (req: Request, res: Response) => {
     try {
         const query = `
             SELECT 
-                b.nama_bahan as name, 
+                CONCAT(b.nama_bahan, ' (', b.warna, ')') as name, 
                 SUM(r.jumlah) as value 
             FROM riwayat_stok r 
             JOIN bahan_sisa b ON r.bahan_id = b.bahan_id 
