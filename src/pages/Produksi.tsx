@@ -349,7 +349,7 @@ export default function ProduksiPage() {
         description="Produksi kerajinan dari bahan sisa"
         icon={Sparkles}
       >
-        {hasRole(['admin', 'manager']) && (
+        {hasRole(['admin']) && (
           <Button
             onClick={() => setIsAddDialogOpen(true)}
             className="bg-gradient-to-r from-y2k-pink to-y2k-purple hover:opacity-90"
@@ -481,7 +481,7 @@ export default function ProduksiPage() {
                       >
                         <Pencil className="w-5 h-5" />
                       </Button>
-                      {hasRole(['admin', 'manager']) && (
+                      {hasRole(['admin']) && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -557,23 +557,27 @@ export default function ProduksiPage() {
 
               <DialogFooter className="mt-auto flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1">
-                  <Label htmlFor="jumlah-footer" className="text-sm font-medium whitespace-nowrap">
-                    Jumlah Produksi
-                  </Label>
-                  <Input
-                    id="jumlah-footer"
-                    type="number"
-                    min="1"
-                    value={jumlahProduksi}
-                    onChange={(e) => setJumlahProduksi(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="rounded-xl w-24"
-                  />
+                  {hasRole(['admin', 'staff']) && (
+                    <>
+                      <Label htmlFor="jumlah-footer" className="text-sm font-medium whitespace-nowrap">
+                        Jumlah Produksi
+                      </Label>
+                      <Input
+                        id="jumlah-footer"
+                        type="number"
+                        min="1"
+                        value={jumlahProduksi}
+                        onChange={(e) => setJumlahProduksi(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="rounded-xl w-24"
+                      />
+                    </>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
                     Tutup
                   </Button>
-                  {hasRole(['admin', 'manager', 'staff']) && (
+                  {hasRole(['admin', 'staff']) && (
                     <Button
                       onClick={handleProduksi}
                       disabled={!checkStokCukup(selectedProduk.produk_id, jumlahProduksi)}
