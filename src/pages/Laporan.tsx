@@ -14,9 +14,9 @@ import {
     Pie,
     Cell
 } from 'recharts';
-import { fetchWeeklyTrends, fetchTopMaterials, fetchCategoryDistribution } from '@/services/api';
+import { fetchWeeklyTrends, fetchTopMaterials, fetchTopProducts, fetchCategoryDistribution } from '@/services/api';
 import { PageHeader } from '@/components/ui/page-header';
-import { PieChart as PieChartIcon, TrendingUp, BarChart as BarChartIcon } from 'lucide-react';
+import { PieChart as PieChartIcon, TrendingUp, BarChart as BarChartIcon, Package } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const COLORS = ['#FF69B4', '#E6E6FA', '#008080', '#98FF98', '#FFA500', '#f472b6', '#a78bfa', '#2dd4bf'];
@@ -32,12 +32,17 @@ export default function Laporan() {
         queryFn: fetchTopMaterials
     });
 
+    const { data: topProducts, isLoading: topProductsLoading } = useQuery({
+        queryKey: ['analytics-top-products'],
+        queryFn: fetchTopProducts
+    });
+
     const { data: categories, isLoading: categoriesLoading } = useQuery({
         queryKey: ['analytics-categories'],
         queryFn: fetchCategoryDistribution
     });
 
-    if (trendsLoading || topMaterialsLoading || categoriesLoading) {
+    if (trendsLoading || topMaterialsLoading || topProductsLoading || categoriesLoading) {
         return <div className="p-8 text-center text-muted-foreground">Memuat data analitik...</div>;
     }
 
@@ -142,6 +147,43 @@ export default function Laporan() {
                                     />
                                 </PieChart>
                             </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Top Products */}
+                <Card className="border-2 shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-all duration-300">
+                    <CardHeader className="bg-muted/30">
+                        <div className="flex items-center gap-2">
+                            <Package className="w-5 h-5 text-y2k-teal" />
+                            <CardTitle>Top 5 Produk Diproduksi</CardTitle>
+                        </div>
+                        <CardDescription>Produk yang paling sering diproduksi</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <div className="h-[300px] w-full">
+                            {topProducts && topProducts.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={topProducts} layout="vertical" margin={{ left: 20 }}>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
+                                        <XAxis type="number" fontSize={12} stroke="#888888" />
+                                        <YAxis dataKey="name" type="category" width={150} fontSize={12} stroke="#888888" />
+                                        <Tooltip
+                                            cursor={{ fill: 'transparent' }}
+                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                        />
+                                        <Bar dataKey="value" fill="#2dd4bf" radius={[0, 4, 4, 0]} barSize={32} name="Jumlah Produksi">
+                                            {topProducts?.map((entry: any, index: number) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-muted-foreground">
+                                    Belum ada data produksi
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

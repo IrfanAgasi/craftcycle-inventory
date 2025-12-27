@@ -36,6 +36,7 @@ export default function BahanSisaPage() {
 
   const [search, setSearch] = useState('');
   const [filterKategori, setFilterKategori] = useState('all');
+  const [filterNamaBahan, setFilterNamaBahan] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBahan, setEditingBahan] = useState<BahanSisa | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'nama_bahan', direction: 'asc' });
@@ -57,12 +58,16 @@ export default function BahanSisaPage() {
     stok_total: 0,
   });
 
+  // Daftar unik nama bahan untuk filter dropdown
+  const uniqueNamaBahan = Array.from(new Set(bahanList.map(b => b.nama_bahan))).sort();
+
   //filter data
   const filteredBahan = bahanList.filter(b => {
     const matchSearch = b.nama_bahan.toLowerCase().includes(search.toLowerCase()) ||
       b.warna.toLowerCase().includes(search.toLowerCase());
     const matchKategori = filterKategori === 'all' || b.kategori_id.toString() === filterKategori;
-    return matchSearch && matchKategori;
+    const matchNamaBahan = filterNamaBahan === 'all' || b.nama_bahan === filterNamaBahan;
+    return matchSearch && matchKategori && matchNamaBahan;
   }).sort((a, b) => {
     if (!sortConfig) return 0;
     const { key, direction } = sortConfig;
@@ -128,7 +133,7 @@ export default function BahanSisaPage() {
         berat_ukuran: formData.berat_ukuran.trim(),
         warna: formData.warna.trim(),
         stok_total: editingBahan ? formData.stok_total : (formData.stok_total || 0),
-        user_id: user?.user_id || 1  
+        user_id: user?.user_id || 1
       };
 
       if (editingBahan) {
@@ -318,6 +323,20 @@ export default function BahanSisaPage() {
             className="pl-9 rounded-xl border-2"
           />
         </div>
+        <Select value={filterNamaBahan} onValueChange={setFilterNamaBahan}>
+          <SelectTrigger className="w-full sm:w-48 rounded-xl border-2">
+            <Package className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Nama Bahan" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua Nama Bahan</SelectItem>
+            {uniqueNamaBahan.map(nama => (
+              <SelectItem key={nama} value={nama}>
+                {nama}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={filterKategori} onValueChange={setFilterKategori}>
           <SelectTrigger className="w-full sm:w-48 rounded-xl border-2">
             <Filter className="w-4 h-4 mr-2" />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PackageMinus, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
@@ -16,8 +16,8 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useInventory } from '@/hooks/useInventory';
-
-import { produkJadi } from '@/data/mockData';
+import { fetchProduk } from '@/services/api';
+import type { ProdukJadi } from '@/types/database';
 
 export default function StokKeluarPage() {
   const { user } = useAuth();
@@ -32,8 +32,24 @@ export default function StokKeluarPage() {
     jumlah: '',
     alasan: '',
     keterangan: '',
-    produk_id: '', 
+    produk_id: '',
   });
+
+  // State untuk menyimpan produk jadi dari database
+  const [produkList, setProdukList] = useState<ProdukJadi[]>([]);
+
+  // Fetch produk jadi dari API
+  useEffect(() => {
+    const loadProduk = async () => {
+      try {
+        const data = await fetchProduk();
+        setProdukList(data);
+      } catch (error) {
+        console.error('Failed to fetch produk:', error);
+      }
+    };
+    loadProduk();
+  }, []);
 
   const [selectedNamaBahan, setSelectedNamaBahan] = useState<string>('');
   const uniqueNamaBahan = Array.from(new Set(bahanList.map(b => b.nama_bahan))).sort();
@@ -102,7 +118,7 @@ export default function StokKeluarPage() {
       let displayAlasan = formData.alasan;
 
       if (formData.alasan === 'tambahan_produksi') {
-        const produk = produkJadi.find(p => p.produk_id.toString() === formData.produk_id);
+        const produk = produkList.find(p => p.produk_id.toString() === formData.produk_id);
         const namaProduk = produk ? produk.nama_produk : 'Unknown';
         finalKeterangan = formData.keterangan.trim()
           ? `Tambahan Produksi (${namaProduk}): ${formData.keterangan}`
@@ -118,7 +134,7 @@ export default function StokKeluarPage() {
         bahan_id: parseInt(formData.bahan_id),
         jumlah: jumlah,
         user_id: user.user_id,
-        keterangan: finalKeterangan 
+        keterangan: finalKeterangan
       });
 
       const isRusak = formData.alasan === 'rusak';
@@ -250,7 +266,7 @@ export default function StokKeluarPage() {
                   <SelectValue placeholder="Pilih Produk..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {produkJadi.map(p => (
+                  {produkList.map(p => (
                     <SelectItem key={p.produk_id} value={p.produk_id.toString()}>
                       {p.nama_produk}
                     </SelectItem>

@@ -382,6 +382,12 @@ export const fetchCategoryDistribution = async () => {
     return response.json();
 };
 
+export const fetchTopProducts = async () => {
+    const response = await fetch(`${API_URL}/analytics/top-products`);
+    if (!response.ok) throw new Error('Failed to fetch top products');
+    return response.json();
+};
+
 export const fetchUserPerformance = async () => {
     const response = await fetch(`${API_URL}/analytics/performance`);
     if (!response.ok) throw new Error('Failed to fetch user performance');

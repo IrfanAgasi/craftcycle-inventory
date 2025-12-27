@@ -155,3 +155,35 @@ export const getUserPerformance = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+export const getTopProducts = async (req: Request, res: Response) => {
+    try {
+        // Query untuk mendapatkan produk yang paling sering diproduksi
+        // berdasarkan keterangan di riwayat_stok yang mengandung nama produk
+        const query = `
+            SELECT 
+                p.nama_produk as name,
+                COUNT(*) as value
+            FROM riwayat_stok r
+            JOIN produk_jadi p ON r.keterangan LIKE CONCAT('%', p.nama_produk, '%')
+            WHERE r.tipe = 'produksi' 
+                OR r.keterangan LIKE 'Tambahan Produksi%'
+                OR r.keterangan LIKE 'Produksi%'
+            GROUP BY p.produk_id
+            ORDER BY value DESC
+            LIMIT 5
+        `;
+
+        const [rows] = await db.query<RowDataPacket[]>(query);
+        const data = rows.map(row => ({
+            name: row.name,
+            value: Number(row.value)
+        }));
+
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching top products:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
